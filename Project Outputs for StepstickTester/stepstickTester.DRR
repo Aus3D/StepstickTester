@@ -1,0 +1,22 @@
+----------------------------------------------------------------------------------------------------------------------------------
+NCDrill File Report For: stepstickTester.PcbDoc   3/12/2017  7:28:24 PM
+----------------------------------------------------------------------------------------------------------------------------------
+
+Layer Pair : Top Layer to Bottom Layer
+ASCII RoundHoles File : stepstickTester.TXT
+
+Tool       Hole Size               Hole Tolerance               Hole Type       Hole Count   Plated         Tool Travel
+----------------------------------------------------------------------------------------------------------------------------------
+T1      0.35mm (14mil)                                            Round             55        PTH        799.30mm (31.47inch)
+T2      0.4mm (16mil)                                             Round             52        PTH        617.39mm (24.31inch)
+T3      0.9mm (35mil)                                             Round             94        PTH        547.63mm (21.56inch)
+T4      0.965mm (38mil)                                           Round             4         PTH        82.40mm (3.24inch)
+T5      1.016mm (40mil)                                           Round             8         PTH        19.17mm (0.75inch)
+T6      1.2mm (47mil)                                             Round             8         PTH        27.00mm (1.06inch)
+T7      1.8mm (71mil)                                             Round             2         PTH        9.00mm (0.35inch)
+T8      3.2mm (126mil)                                            Round             8         PTH        412.66mm (16.25inch)
+T9      3.81mm (150mil)                                           Round             2         PTH        15.00mm (0.59inch)
+----------------------------------------------------------------------------------------------------------------------------------
+Totals                                                                              233
+
+Total Processing Time (hh:mm:ss) : 00:00:01
