@@ -40,16 +40,7 @@ Stepper::Stepper(int STEP_PIN, int DIR_PIN, int EN_PIN, int MS1_PIN, int MS2_PIN
 	_ms2_pin = MS2_PIN;
 	_ms3_pin = MS3_PIN;
 	_microsteppingMode = 0;
-
-	switch(type) {
-		case TYPE_A4988: 
-			_driver = a4988;
-			break;
-		case TYPE_DRV8825:
-			_driver = drv8825;
-			break;
-	}
-
+  setDriverType(type);
 }
 
 void Stepper::enableMotor(bool enabled) {
@@ -97,4 +88,15 @@ void Stepper::moveMotor(float rotations) {
 //speed is revolutions / second
 void Stepper::setMotorSpeed(float speed) {
 	_speed = speed;
+}
+
+void Stepper::setDriverType(int type) {
+  switch(type) {
+    case TYPE_A4988: 
+      _driver = a4988;
+      break;
+    case TYPE_DRV8825:
+      _driver = drv8825;
+      break;
+  }
 }

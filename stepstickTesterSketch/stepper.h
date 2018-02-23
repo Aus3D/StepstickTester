@@ -32,6 +32,7 @@ public:
 	void enableMotor(bool enabled);
 	void setDirectionForward(bool forward);
 	void setMotorSpeed(float speed);
+  void setDriverType(int type);
 
 private:
 	driverType _driver;
