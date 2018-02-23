@@ -116,8 +116,8 @@ bool runTest() {
     display.print(F("5V line...  "));
     display.display();
     digitalWrite(EN_5V,  LOW);
-    delay(RAIL_SHORT_WAIT_TIME);
-    float rail_5V = 5;//dividerVoltage(analogRead(TEST_5V), DIV_5V_R1, DIV_5V_R2);
+    delay(RAIL_SHORT_WAIT_TIME);   
+    float rail_5V = dividerVoltage(analogRead(TEST_5V), DIV_5V_R1, DIV_5V_R2);
   
     if(rail_5V < RAIL_5V_THRESHOLD) {
       failed = true;
