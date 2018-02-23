@@ -24,6 +24,7 @@
 
 #define PASSED_BUZZER_FREQ  440
 #define FAILED_BUZZER_FREQ  98
+#define TICK_BUZZER_FREQ    1000
 
 #define LCD_RST       10
 Adafruit_SSD1306 display(LCD_RST);
@@ -44,7 +45,7 @@ Adafruit_SSD1306 display(LCD_RST);
 #define MOTOR_TEST_REST_TIME          100 //time (ms) to wait between test motions
 #define MOTOR_TEST_SPEED              6   //motor speed (higher is faster)
 
-Stepper stepper(STEPPER_STEP, STEPPER_DIR, STEPPER_EN, STEPPER_MS1, STEPPER_MS2, STEPPER_MS3, TYPE_DRV8825);
+Stepper stepper(STEPPER_STEP, STEPPER_DIR, STEPPER_EN, STEPPER_MS1, STEPPER_MS2, STEPPER_MS3, DRIVER_TYPE_DRV8825);
 AMS_5600 ams5600;
 
 void setup() {
@@ -54,14 +55,16 @@ void setup() {
 
   //Initialise display
   display.begin(SSD1306_SWITCHCAPVCC, 0x3D);  // initialize with the I2C addr 0x3D (for the 128x64) 
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setTextWrap(false);
   display.clearDisplay();
 
   //Initialise serial
   Serial.begin(250000);
   Serial.println(F("Beginning stepper test sketch..."));
-
-  //Print startup screen
-  configurationScreen();
+  Serial.print(F("Driver Type: "));
+  Serial.println(stepper.getDriverTypeName());
 
   //Stepper pin initialisation
   pinMode(STEPPER_STEP, OUTPUT);
@@ -94,11 +97,18 @@ void setup() {
   digitalWrite(LED_GREEN, LOW);
   digitalWrite(LED_RED, LOW);
   Serial.println(F("End of Setup"));
+
+  while(digitalRead(TEST_BUTTON) == HIGH) {
+    //Print startup screen
+    configurationScreen();
+  } 
 }
 
 void loop() {
-  while(digitalRead(TEST_BUTTON) == HIGH) {} 
+
   runTest();
+  while(digitalRead(TEST_BUTTON) == HIGH) {}
+
 }
 
 bool runTest() {
@@ -173,15 +183,15 @@ bool runTest() {
         stepper.setMotorSpeed(MOTOR_TEST_SPEED); 
         Serial.print(F("Testing microstepping mode "));
         Serial.print(i);
-        Serial.print(" (");
+        Serial.print(F(" ("));
         Serial.print(stepper.getMicrosteppingMultiplier(i));
         Serial.println(F("x microstepping)"));   
 
         display.print(F("MS mode "));
         display.print(i);
-        display.print(" (");
+        display.print(F(" ("));
         display.print(stepper.getMicrosteppingMultiplier(i));
-        display.print("x)");
+        display.print(F("x)"));
         display.display();    
       }
       
@@ -201,21 +211,21 @@ bool runTest() {
           int forwardPosition = readEncoderAngle();
           angularDiff = abs(angularDifference(startPosition, forwardPosition));
 
-          Serial.print("Start angle: ");
+          Serial.print(F("Start angle: "));
           Serial.print(startPosition);
-          Serial.print(", end angle: ");
+          Serial.print(F(", end angle: "));
           Serial.print(forwardPosition);
-          Serial.print(", difference: ");
+          Serial.print(F(", difference: "));
           Serial.println(angularDiff);
           
           if(abs(angularDiff - MOTOR_TEST_ROTATE_DEGREES) > MOTOR_TEST_ANGULAR_TOLERANCE) {
             failed = true;
-            Serial.println("failed!");
+            Serial.println(F("failed!"));
           } else {
-            Serial.println("passed!");
+            Serial.println(F("passed!"));
           }
         } else {
-          Serial.println("done.");
+          Serial.println(F("done."));
         }
       }
   
@@ -234,21 +244,21 @@ bool runTest() {
           int returnedPosition = readEncoderAngle();
           angularDiff = abs(angularDifference(startPosition, returnedPosition));
 
-          Serial.print("Start angle: ");
+          Serial.print(F("Start angle: "));
           Serial.print(startPosition);
-          Serial.print(", end angle: ");
+          Serial.print(F(", end angle: "));
           Serial.print(returnedPosition);
-          Serial.print(", difference: ");
+          Serial.print(F(", difference: "));
           Serial.println(angularDiff);
           
           if(abs(angularDiff) > MOTOR_TEST_ANGULAR_TOLERANCE) {
             failed = true;
-            Serial.println("failed!");
+            Serial.println(F("failed!"));
           } else {
-            Serial.println("passed!");
+            Serial.println(F("passed!"));
           }
         } else {
-          Serial.println("done.");
+          Serial.println(F("done."));
         }
       }
       
@@ -268,21 +278,21 @@ bool runTest() {
           int disabledPosition = readEncoderAngle();
           angularDiff = abs(angularDifference(startPosition, disabledPosition));
 
-          Serial.print("Start angle: ");
+          Serial.print(F("Start angle: "));
           Serial.print(startPosition);
-          Serial.print(", end angle: ");
+          Serial.print(F(", end angle: "));
           Serial.print(disabledPosition);
-          Serial.print(", difference: ");
+          Serial.print(F(", difference: "));
           Serial.println(angularDiff);
       
           if(abs(angularDiff) > MOTOR_TEST_ANGULAR_TOLERANCE) {
             failed = true;
-            Serial.println("failed!");
+            Serial.println(F("failed!"));
           } else {
-            Serial.println("passed!");
+            Serial.println(F("passed!"));
           }  
         } else {
-          Serial.println("done.");
+          Serial.println(F("done."));
         }
       }
       if(failed) {
@@ -358,13 +368,48 @@ void alignCursorRight(int characters) {
 }
 
 void configurationScreen() {
-  display.setTextSize(1);
-  display.setTextColor(WHITE);
-  display.setTextWrap(false);
+  display.clearDisplay();
   display.setCursor(0,0);
   display.println(F("Configuration:"));
   display.print(F("Driver Type: "));
-  //display.println(stepper.getDriverTypeName());
+  display.println(stepper.getDriverTypeName());
   display.display();
+
+  static int oldAngle = readEncoderAngle();
+  int newAngle = readEncoderAngle();
+  int angDiff = angularDifference(oldAngle, newAngle);
+
+  //Serial.print(F("old angle: \t"));
+  //Serial.print(oldAngle);
+  //Serial.print(F("\tnew angle: \t"));
+  //Serial.print(newAngle);
+  //Serial.print(F("\tdiff: \t"));
+  //Serial.print(angDiff);
+
+  if(angDiff > 90) {
+    stepper.setDriverType(stepper.getDriverType() + 1);
+    if(stepper.getDriverType() >= DRIVER_TYPE_COUNT) {
+      stepper.setDriverType(0);
+    }
+    //Serial.print(F(" increment"));
+    tone(BUZZER, TICK_BUZZER_FREQ, 50);
+    oldAngle = newAngle;
+  }
+
+  if(angDiff < -90) {
+    stepper.setDriverType(stepper.getDriverType() - 1);
+    if(stepper.getDriverType() == 0) {
+      stepper.setDriverType(DRIVER_TYPE_COUNT-1);
+    }
+    //Serial.print(F("decrement"));
+    tone(BUZZER, TICK_BUZZER_FREQ, 10);
+    oldAngle = newAngle;
+  }
+
+  //Serial.print("\t");
+  //Serial.print(stepper.getDriverType());
+  //Serial.print("\t");
+  //Serial.print(stepper.getDriverTypeName());
+  //Serial.println();
 }
 

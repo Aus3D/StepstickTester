@@ -2,8 +2,9 @@
 #define STEPPER_H
 #include "Arduino.h"
 
-#define TYPE_A4988		0
-#define TYPE_DRV8825	1
+#define DRIVER_TYPE_A4988		0
+#define DRIVER_TYPE_DRV8825	1
+#define DRIVER_TYPE_COUNT   2
 
 typedef struct {
 	bool ms1_state;
@@ -17,6 +18,7 @@ typedef struct {
 	int microsteppingModes;
 	bool enable_inverted;
 	bool dir_inverted;
+  char driver_name[8];
 } driverType;
 
 
@@ -33,6 +35,8 @@ public:
 	void setDirectionForward(bool forward);
 	void setMotorSpeed(float speed);
   void setDriverType(int type);
+  String getDriverTypeName();
+  int getDriverType();
 
 private:
 	driverType _driver;
@@ -47,6 +51,7 @@ private:
 
 	int _stepsPerRevolution = 200;
 	float _speed = 1;
+  int _driver_type_num = 0;
 
 };
 

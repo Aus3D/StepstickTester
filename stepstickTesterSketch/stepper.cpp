@@ -13,7 +13,8 @@ driverType drv8825 = {
 	{1, 1, 1, 32}},
 	.microsteppingModes = 6,
 	.enable_inverted = true,
-	.dir_inverted = false
+	.dir_inverted = false,
+  "DRV8825"
 };
 
 driverType a4988 = {
@@ -25,7 +26,8 @@ driverType a4988 = {
 	{1, 1, 1, 16}},
 	.microsteppingModes = 5,
 	.enable_inverted = true,
-	.dir_inverted = false
+	.dir_inverted = false,
+  "A4988"
 };
 
 
@@ -91,12 +93,24 @@ void Stepper::setMotorSpeed(float speed) {
 }
 
 void Stepper::setDriverType(int type) {
-  switch(type) {
-    case TYPE_A4988: 
+  _driver_type_num = type;
+  switch(_driver_type_num) {
+    case DRIVER_TYPE_A4988: 
       _driver = a4988;
       break;
-    case TYPE_DRV8825:
+    case DRIVER_TYPE_DRV8825:
       _driver = drv8825;
       break;
   }
 }
+
+int Stepper::getDriverType() {
+  return _driver_type_num;
+}
+
+String Stepper::getDriverTypeName() {
+  //return String str((char*)_driver.driver_name);
+  String driverTypeName = _driver.driver_name;
+  return driverTypeName;
+}
+
