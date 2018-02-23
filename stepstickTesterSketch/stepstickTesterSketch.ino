@@ -342,7 +342,7 @@ bool runTest() {
 
 
 float dividerVoltage(int analogReading, int R1, int R2) {
-  float voltage = ((5 * (analogReading / 1024)) * (R1 + R2)) / (R2);
+  float voltage = (5.0 * ((float)analogReading / 1024)) * (R1 + R2) / (R2);
   return voltage;
 }
 
