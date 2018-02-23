@@ -7,19 +7,18 @@
 #define STEPPER_MS2   6
 #define STEPPER_MS3   7
 
-#define EN_12V        A0
-#define EN_5V         A1
+#define EN_12V        13
+#define EN_5V         A0
 #define TEST_5V       A2
 #define TEST_12V      A3
 
 #define TEST_BUTTON   8
+#define LED_GREEN     11
+#define LED_RED       12
+#define BUZZER        9
 
-#define LCD_RST       9
-#define LCD_CS        10
-#define LCD_DATA      11
-#define LCD_DC        12
-#define LCD_CLK       13
 
+#define LCD_RST       10
 
 #define DIV_5V_R1 4700
 #define DIV_5V_R2 1000
