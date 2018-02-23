@@ -121,14 +121,13 @@ bool runTest() {
   
     if(rail_5V < RAIL_5V_THRESHOLD) {
       failed = true;
-      Serial.println(F("5V fail!"));
       alignCursorRight(4);
-      display.println("fail");
       display.println(F("fail"));
+      Serial.println(F("5V fail!"));
     }  else {
       alignCursorRight(4);
-      Serial.println(F("pass"));
       display.println(F("pass"));
+      Serial.println(F("pass"));
     }
     display.display();
   }
@@ -136,32 +135,21 @@ bool runTest() {
 
   if(!failed) {
     Serial.print(F("Enabling 12V line... "));
-
-    //float rail_12V = dividerVoltage(analogRead(TEST_12V), DIV_12V_R1, DIV_12V_R2);
-    //Serial.println(rail_12V);
-
     display.print(F("12V line... "));
     display.display();
-    //digitalWrite(EN_12V,  LOW);
-
-    //rail_12V = dividerVoltage(analogRead(TEST_12V), DIV_12V_R1, DIV_12V_R2);
-    //Serial.println(rail_12V);
-    Serial.println(analogRead(TEST_12V));
-        
+    digitalWrite(EN_12V,  LOW); 
     delay(RAIL_SHORT_WAIT_TIME);   
-    
     float rail_12V = dividerVoltage(analogRead(TEST_12V), DIV_12V_R1, DIV_12V_R2);
-    Serial.println(rail_12V);
         
     if(rail_12V < RAIL_12V_THRESHOLD) {
       failed = true;
-      Serial.println(F("12V fail!"));
       alignCursorRight(4);
       display.println(F("fail"));
+      Serial.println(F("12V fail!"));
     }  else {
-      Serial.println(F("pass"));
       alignCursorRight(4);
       display.println(F("pass"));
+      Serial.println(F("pass"));
     }
     display.display();
   }
