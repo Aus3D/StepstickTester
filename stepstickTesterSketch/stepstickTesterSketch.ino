@@ -17,6 +17,8 @@
 #define LED_RED       12
 #define BUZZER        9
 
+#define PASSED_BUZZER_FREQ  440
+#define FAILED_BUZZER_FREQ  98
 
 #define LCD_RST       10
 
@@ -59,17 +61,32 @@ void setup() {
   pinMode(TEST_12V, INPUT);
   pinMode(TEST_5V,  INPUT);
 
-  pinMode(TEST_BUTTON, INPUT);
+  pinMode(TEST_BUTTON, INPUT_PULLUP);
+  
+  pinMode(LED_GREEN, OUTPUT);
+  pinMode(LED_RED, OUTPUT);
+  pinMode(BUZZER, OUTPUT);
+
+  digitalWrite(LED_GREEN, HIGH);
+  digitalWrite(LED_RED, HIGH);
+  tone(BUZZER, PASSED_BUZZER_FREQ, 500);
+
+  delay(1000);
+
+  digitalWrite(LED_GREEN, LOW);
+  digitalWrite(LED_RED, LOW);
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
+  while(digitalRead(TEST_BUTTON) == HIGH) {} 
   runTest();
-  delay(10000);
 }
 
 bool runTest() {
   bool failed = false;
+
+  digitalWrite(LED_GREEN, LOW);
+  digitalWrite(LED_RED, LOW);
 
   unsigned long testStartTime = millis();
 
@@ -206,6 +223,15 @@ bool runTest() {
   /////////////////////////////////////////////////////////////////////
   digitalWrite(EN_5V,  HIGH);
   digitalWrite(EN_12V, HIGH);
+
+  if(failed) {
+    digitalWrite(LED_RED, HIGH);
+    tone(BUZZER, FAILED_BUZZER_FREQ, 500);
+  } else {
+    digitalWrite(LED_GREEN, HIGH);
+    tone(BUZZER, PASSED_BUZZER_FREQ, 500);
+  }
+ 
 
   unsigned long testEndTime = millis();
   unsigned long testDuration = testEndTime - testStartTime;
