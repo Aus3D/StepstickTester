@@ -84,12 +84,13 @@ int Stepper::getMicrosteppingMultiplier(int mode) {
 
 void Stepper::moveMotor(float rotations) {
 	int stepsToMove = _stepsPerRevolution * rotations * getMicrosteppingMultiplier(getMicrosteppingMode());
+  int stepDelay   = 1000000 / (_speed * _stepsPerRevolution * getMicrosteppingMultiplier(getMicrosteppingMode()));
 
     for(int i = 0; i < stepsToMove; i++) {
       digitalWrite(_step_pin, HIGH);
-      delayMicroseconds(10);
+      delayMicroseconds(2);
       digitalWrite(_step_pin, LOW);
-      delayMicroseconds(1000000 / (_speed * _stepsPerRevolution * getMicrosteppingMultiplier(getMicrosteppingMode())));
+      delayMicroseconds(stepDelay);
     }    
 }
 
