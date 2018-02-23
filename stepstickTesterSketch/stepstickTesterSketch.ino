@@ -184,11 +184,12 @@ bool runTest() {
       if(!failed) {
         stepper.setMicrosteppingMode(i);   
         stepper.setMotorSpeed(MOTOR_TEST_SPEED); 
-        Serial.print("Testing microstepping mode ");
+        Serial.print(F("Testing microstepping mode "));
         Serial.print(i);
         Serial.print(" (");
         Serial.print(stepper.getMicrosteppingMultiplier(i));
-        Serial.println("x microstepping)");        
+        Serial.println(F("x microstepping)"));   
+
         display.print(F("MS mode "));
         display.print(i);
         display.print(" (");
@@ -201,8 +202,7 @@ bool runTest() {
       // Rotate by X degrees, tests MS settings and STEP pin.
       /////////////////////////////////////////////////////////////////////
       if(!failed) {
-        Serial.print("Forward rotate test... ");
-        
+        Serial.print(F("Forward rotate test... "));
         stepper.setDirectionForward(true);
         stepper.enableMotor(true);  
         delay(100); 
@@ -236,7 +236,7 @@ bool runTest() {
       // Reverse direction, rotate back by X degrees. Tests DIR pin.
       /////////////////////////////////////////////////////////////////////
       if(!failed) {
-        Serial.print("Reverse rotate test... ");
+        Serial.print(F("Reverse rotate test... "));
         stepper.setDirectionForward(false);
         delay(100);
         stepper.moveMotor((float)ROTATE_DEGREES / 360.0f);   //move back by X degrees
@@ -269,7 +269,7 @@ bool runTest() {
       // Disable driver, attempt rotate by X degrees. Tests EN pin.
       /////////////////////////////////////////////////////////////////////
       if(!failed) {
-        Serial.print("Disabled rotate test... ");
+        Serial.print(F("Disabled rotate test... "));
         stepper.setDirectionForward(true);
         stepper.enableMotor(false);
         delay(100);
@@ -332,9 +332,9 @@ bool runTest() {
 
   unsigned long testEndTime = millis();
   unsigned long testDuration = testEndTime - testStartTime;
-  Serial.print("Test took ");
+  Serial.print(F("Test took "));
   Serial.print(testDuration);
-  Serial.println("ms to complete.");
+  Serial.println(F("ms to complete."));
 
   return !failed;
   
