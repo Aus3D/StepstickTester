@@ -35,7 +35,6 @@ Adafruit_SSD1306 display(LCD_RST);
 #define DIV_12V_R1 4700
 #define DIV_12V_R2 1000
 #define RAIL_12V_THRESHOLD 10
-
 #define RAIL_SHORT_WAIT_TIME 250
 
 #define HAVE_ROTATIONAL_ENCODER true    //if we don't have an encoder, the user must watch the motor and verify it behaves correctly
@@ -49,51 +48,52 @@ Stepper stepper(STEPPER_STEP, STEPPER_DIR, STEPPER_EN, STEPPER_MS1, STEPPER_MS2,
 AMS_5600 ams5600;
 
 void setup() {
+
+  //Initialise I2C for display and AS5600 encoder
   Wire.begin();
+
+  //Initialise display
   display.begin(SSD1306_SWITCHCAPVCC, 0x3D);  // initialize with the I2C addr 0x3D (for the 128x64) 
-  // Clear the buffer.
   display.clearDisplay();
-  display.setTextSize(1);
-  display.setTextColor(WHITE);
-  display.setTextWrap(false);
-  display.setCursor(0,0);
-  display.println(F("Configuration:"));
-  display.display();
 
+  //Initialise serial
   Serial.begin(250000);
+  Serial.println(F("Beginning stepper test sketch..."));
 
-  //initialise pins
+  //Print startup screen
+  configurationScreen();
+
+  //Stepper pin initialisation
   pinMode(STEPPER_STEP, OUTPUT);
   pinMode(STEPPER_EN,   OUTPUT);
   pinMode(STEPPER_DIR,  OUTPUT);
   pinMode(STEPPER_MS1,  OUTPUT);
   pinMode(STEPPER_MS2,  OUTPUT);
   pinMode(STEPPER_MS3,  OUTPUT);  
-
   stepper.enableMotor(false);
-  
-  pinMode(EN_12V, OUTPUT);
-  pinMode(EN_5V,  OUTPUT);  
-  digitalWrite(EN_12V, HIGH);
-  digitalWrite(EN_5V,  HIGH);
-  
-  pinMode(TEST_12V, INPUT);
-  pinMode(TEST_5V,  INPUT);
 
-  pinMode(TEST_BUTTON, INPUT_PULLUP);
-  
-  pinMode(LED_GREEN, OUTPUT);
-  pinMode(LED_RED, OUTPUT);
-  pinMode(BUZZER, OUTPUT);
+  //Power rail pin initialisation
+  pinMode(EN_12V,       OUTPUT);
+  pinMode(EN_5V,        OUTPUT);  
+  pinMode(TEST_12V,     INPUT);
+  pinMode(TEST_5V,      INPUT);
+  digitalWrite(EN_12V,  HIGH);
+  digitalWrite(EN_5V,   HIGH);
 
+  //Button and LEDs initialisation
+  pinMode(TEST_BUTTON,  INPUT_PULLUP);
+  pinMode(LED_GREEN,    OUTPUT);
+  pinMode(LED_RED,      OUTPUT);
+  pinMode(BUZZER,       OUTPUT);
+
+  //Indicate setup complete
   digitalWrite(LED_GREEN, HIGH);
   digitalWrite(LED_RED, HIGH);
   tone(BUZZER, PASSED_BUZZER_FREQ, 500);
-
   delay(1000);
-
   digitalWrite(LED_GREEN, LOW);
   digitalWrite(LED_RED, LOW);
+  Serial.println(F("End of Setup"));
 }
 
 void loop() {
@@ -132,7 +132,6 @@ bool runTest() {
     display.display();
   }
   
-
   if(!failed) {
     Serial.print(F("Enabling 12V line... "));
     display.print(F("12V line... "));
@@ -261,7 +260,6 @@ bool runTest() {
         stepper.setDirectionForward(true);
         stepper.enableMotor(false);
         delay(100);
-
         stepper.moveMotor((float)20 / 360.0f);   //move forward by X degrees
 
         delay(MOTOR_TEST_REST_TIME);
@@ -318,7 +316,6 @@ bool runTest() {
     display.println(F("Test passed!"));
     display.display();
   }
- 
 
   unsigned long testEndTime = millis();
   unsigned long testDuration = testEndTime - testStartTime;
@@ -327,9 +324,7 @@ bool runTest() {
   Serial.println(F("ms to complete."));
 
   return !failed;
-  
 }
-
 
 float dividerVoltage(int analogReading, int R1, int R2) {
   float voltage = (5.0 * ((float)analogReading / 1024)) * (R1 + R2) / (R2);
@@ -360,5 +355,16 @@ float convertRawAngleToDegrees(word newAngle)
 
 void alignCursorRight(int characters) {
   display.setCursor(display.width()-characters*6,display.getCursorY());
+}
+
+void configurationScreen() {
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setTextWrap(false);
+  display.setCursor(0,0);
+  display.println(F("Configuration:"));
+  display.print(F("Driver Type: "));
+  //display.println(stepper.getDriverTypeName());
+  display.display();
 }
 
