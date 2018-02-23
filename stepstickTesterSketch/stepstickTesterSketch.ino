@@ -322,6 +322,8 @@ bool runTest() {
   if(failed) {
     digitalWrite(LED_RED, HIGH);
     tone(BUZZER, FAILED_BUZZER_FREQ, 500);
+    display.println(F("Test failed!"));
+    display.display();
   } else {
     digitalWrite(LED_GREEN, HIGH);
     tone(BUZZER, PASSED_BUZZER_FREQ, 500);
