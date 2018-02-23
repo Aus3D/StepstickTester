@@ -40,10 +40,10 @@ Adafruit_SSD1306 display(LCD_RST);
 
 #define HAVE_ROTATIONAL_ENCODER true    //if we don't have an encoder, the user must watch the motor and verify it behaves correctly
 
-#define ROTATE_DEGREES 90   //we rotate back or forwards 90 degrees
-#define ANGULAR_TOLERANCE 5 //number of degrees forward/reverse test can be off by
-#define MOTOR_REST_TIME 100
-#define MOTOR_TEST_SPEED 6
+#define MOTOR_TEST_ROTATE_DEGREES     90  //we rotate back or forwards 90 degrees
+#define MOTOR_TEST_ANGULAR_TOLERANCE  5   //number of degrees forward/reverse test can be off by
+#define MOTOR_TEST_REST_TIME          100 //time (ms) to wait between test motions
+#define MOTOR_TEST_SPEED              6   //motor speed (higher is faster)
 
 Stepper stepper(STEPPER_STEP, STEPPER_DIR, STEPPER_EN, STEPPER_MS1, STEPPER_MS2, STEPPER_MS3, TYPE_DRV8825);
 AMS_5600 ams5600;
@@ -206,9 +206,9 @@ bool runTest() {
         stepper.setDirectionForward(true);
         stepper.enableMotor(true);  
         delay(100); 
-        stepper.moveMotor((float)ROTATE_DEGREES / 360.0f);   //move forward by X degrees
+        stepper.moveMotor((float)MOTOR_TEST_ROTATE_DEGREES / 360.0f);   //move forward by X degrees
 
-        delay(MOTOR_REST_TIME);
+        delay(MOTOR_TEST_REST_TIME);
 
         if(HAVE_ROTATIONAL_ENCODER) {
           int forwardPosition = readEncoderAngle();
@@ -221,7 +221,7 @@ bool runTest() {
           Serial.print(", difference: ");
           Serial.println(angularDiff);
           
-          if(abs(angularDiff - ROTATE_DEGREES) > ANGULAR_TOLERANCE) {
+          if(abs(angularDiff - MOTOR_TEST_ROTATE_DEGREES) > MOTOR_TEST_ANGULAR_TOLERANCE) {
             failed = true;
             Serial.println("failed!");
           } else {
@@ -239,9 +239,9 @@ bool runTest() {
         Serial.print(F("Reverse rotate test... "));
         stepper.setDirectionForward(false);
         delay(100);
-        stepper.moveMotor((float)ROTATE_DEGREES / 360.0f);   //move back by X degrees
+        stepper.moveMotor((float)MOTOR_TEST_ROTATE_DEGREES / 360.0f);   //move back by X degrees
 
-        delay(MOTOR_REST_TIME);
+        delay(MOTOR_TEST_REST_TIME);
 
         if(HAVE_ROTATIONAL_ENCODER) {
           int returnedPosition = readEncoderAngle();
@@ -254,7 +254,7 @@ bool runTest() {
           Serial.print(", difference: ");
           Serial.println(angularDiff);
           
-          if(abs(angularDiff) > ANGULAR_TOLERANCE) {
+          if(abs(angularDiff) > MOTOR_TEST_ANGULAR_TOLERANCE) {
             failed = true;
             Serial.println("failed!");
           } else {
@@ -276,7 +276,7 @@ bool runTest() {
 
         stepper.moveMotor((float)20 / 360.0f);   //move forward by X degrees
 
-        delay(MOTOR_REST_TIME);
+        delay(MOTOR_TEST_REST_TIME);
 
         if(HAVE_ROTATIONAL_ENCODER) {
           int disabledPosition = readEncoderAngle();
@@ -289,7 +289,7 @@ bool runTest() {
           Serial.print(", difference: ");
           Serial.println(angularDiff);
       
-          if(abs(angularDiff) > ANGULAR_TOLERANCE) {
+          if(abs(angularDiff) > MOTOR_TEST_ANGULAR_TOLERANCE) {
             failed = true;
             Serial.println("failed!");
           } else {
