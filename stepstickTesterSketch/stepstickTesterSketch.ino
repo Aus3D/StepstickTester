@@ -1,4 +1,8 @@
 #include "stepper.h"
+#include <SPI.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
 
 #define STEPPER_STEP  2
 #define STEPPER_EN    3
@@ -21,6 +25,7 @@
 #define FAILED_BUZZER_FREQ  98
 
 #define LCD_RST       10
+Adafruit_SSD1306 display(LCD_RST);
 
 #define DIV_5V_R1 4700
 #define DIV_5V_R2 1000
@@ -42,6 +47,16 @@
 Stepper stepper(STEPPER_STEP, STEPPER_DIR, STEPPER_EN, STEPPER_MS1, STEPPER_MS2, STEPPER_MS3, TYPE_DRV8825);
 
 void setup() {
+  Wire.begin();
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3D);  // initialize with the I2C addr 0x3D (for the 128x64) 
+  // Clear the buffer.
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setTextWrap(false);
+  display.setCursor(0,0);
+  display.println(F("Configuration:"));
+  display.display();
 
   Serial.begin(250000);
 
@@ -85,44 +100,78 @@ void loop() {
 bool runTest() {
   bool failed = false;
 
+  display.clearDisplay();
+  display.setCursor(0,0);
   digitalWrite(LED_GREEN, LOW);
   digitalWrite(LED_RED, LOW);
 
   unsigned long testStartTime = millis();
 
   if(!failed) {
-    Serial.print("Enabling 5V line... ");
+    Serial.print(F("Enabling 5V line... "));
+    display.print(F("5V line...  "));
+    display.display();
     digitalWrite(EN_5V,  LOW);
     delay(RAIL_SHORT_WAIT_TIME);
     float rail_5V = 5;//dividerVoltage(analogRead(TEST_5V), DIV_5V_R1, DIV_5V_R2);
   
     if(rail_5V < RAIL_5V_THRESHOLD) {
       failed = true;
-      Serial.println("5V fail!");
+      Serial.println(F("5V fail!"));
+      alignCursorRight(4);
+      display.println("fail");
+      display.println(F("fail"));
     }  else {
-      Serial.println("Success!");
+      alignCursorRight(4);
+      Serial.println(F("pass"));
+      display.println(F("pass"));
     }
+    display.display();
   }
+  
 
   if(!failed) {
-    Serial.print("Enabling 12V line... ");
-    digitalWrite(EN_12V,  LOW);
-    delay(RAIL_SHORT_WAIT_TIME);
-    float rail_12V = 12;//dividerVoltage(analogRead(TEST_12V), DIV_12V_R1, DIV_12V_R2);
-  
+    Serial.print(F("Enabling 12V line... "));
+
+    //float rail_12V = dividerVoltage(analogRead(TEST_12V), DIV_12V_R1, DIV_12V_R2);
+    //Serial.println(rail_12V);
+
+    display.print(F("12V line... "));
+    display.display();
+    //digitalWrite(EN_12V,  LOW);
+
+    //rail_12V = dividerVoltage(analogRead(TEST_12V), DIV_12V_R1, DIV_12V_R2);
+    //Serial.println(rail_12V);
+    Serial.println(analogRead(TEST_12V));
+        
+    delay(RAIL_SHORT_WAIT_TIME);   
+    
+    float rail_12V = dividerVoltage(analogRead(TEST_12V), DIV_12V_R1, DIV_12V_R2);
+    Serial.println(rail_12V);
+        
     if(rail_12V < RAIL_12V_THRESHOLD) {
       failed = true;
-      Serial.println("12V fail!");
+      Serial.println(F("12V fail!"));
+      alignCursorRight(4);
+      display.println(F("fail"));
     }  else {
-      Serial.println("Success!");
+      Serial.println(F("pass"));
+      alignCursorRight(4);
+      display.println(F("pass"));
     }
+    display.display();
   }
-
+  
   if(!failed) {
 
-    Serial.print("Driver has ");
+    Serial.print(F("Driver has "));
     Serial.print(stepper.getMicrosteppingModes());
-    Serial.println(" microstepping modes.");
+    Serial.println(F(" microstepping modes."));
+    
+    //display.print(stepper.getMicrosteppingModes());
+    //display.print(F("DRV has "));
+    //display.println(F(" MS modes"));
+    //display.display();
   
     for(int i = 0; i < stepper.getMicrosteppingModes(); i++) {
       int startPosition = readEncoderAngle(); 
@@ -136,6 +185,12 @@ bool runTest() {
         Serial.print(" (");
         Serial.print(stepper.getMicrosteppingMultiplier(i));
         Serial.println("x microstepping)");        
+        display.print(F("MS mode "));
+        display.print(i);
+        display.print(" (");
+        display.print(stepper.getMicrosteppingMultiplier(i));
+        display.print("x)");
+        display.display();    
       }
       
       /////////////////////////////////////////////////////////////////////
@@ -215,6 +270,16 @@ bool runTest() {
           Serial.println("done.");
         }
       }
+      if(failed) {
+        alignCursorRight(4);
+        display.println(F("fail"));
+        display.display();
+        break;
+      } else {
+        alignCursorRight(4);
+        display.println(F("pass"));
+        display.display();
+      }
     }
   }
 
@@ -230,6 +295,8 @@ bool runTest() {
   } else {
     digitalWrite(LED_GREEN, HIGH);
     tone(BUZZER, PASSED_BUZZER_FREQ, 500);
+    display.println(F("Test passed!"));
+    display.display();
   }
  
 
@@ -255,5 +322,9 @@ int angularDifference(int angleA, int angleB) {
 
 int readEncoderAngle() {
   return 0;
+}
+
+void alignCursorRight(int characters) {
+  display.setCursor(display.width()-characters*6,display.getCursorY());
 }
 
