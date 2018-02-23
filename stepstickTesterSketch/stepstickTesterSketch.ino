@@ -43,7 +43,7 @@ Adafruit_SSD1306 display(LCD_RST);
 #define ROTATE_DEGREES 90   //we rotate back or forwards 90 degrees
 #define ANGULAR_TOLERANCE 5 //number of degrees forward/reverse test can be off by
 #define MOTOR_REST_TIME 100
-#define MOTOR_TEST_SPEED 2
+#define MOTOR_TEST_SPEED 6
 
 Stepper stepper(STEPPER_STEP, STEPPER_DIR, STEPPER_EN, STEPPER_MS1, STEPPER_MS2, STEPPER_MS3, TYPE_DRV8825);
 AMS_5600 ams5600;
