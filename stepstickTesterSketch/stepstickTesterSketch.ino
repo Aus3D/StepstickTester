@@ -12,11 +12,11 @@
 #define STEPPER_MS2   6
 #define STEPPER_MS3   7
 
-#define EN_12V        13
-#define EN_5V         A0
-#define TEST_5V       A2
-#define TEST_12V      A3
-#define TEST_INPUT    A1
+#define POWER_MOTOR_SUPPLY_EN     13
+#define POWER_MOTOR_SUPPLY_TEST   A3
+#define POWER_MOTOR_LOGIC_EN      A0
+#define POWER_MOTOR_LOGIC_TEST    A2
+#define POWER_BOARD_INPUT_TEST    A1
 
 #define TEST_BUTTON   8
 #define LED_GREEN     11
@@ -31,17 +31,17 @@
 #define LCD_RST       10
 Adafruit_SSD1306 display(LCD_RST);
 
-#define DIV_5V_R1 4700
-#define DIV_5V_R2 1000
-#define RAIL_5V_THRESHOLD 4.5
+#define INPUT_RAIL_DIV_R1 4700
+#define INPUT_RAIL_DIV_R2 1000
+#define INPUT_RAIL_THRESHOLD 6    //minimum voltage input power must be to pass test
 
-#define DIV_12V_R1 4700
-#define DIV_12V_R2 1000
-#define RAIL_12V_THRESHOLD 1  //voltage rail_12v can be below rail_input before there is a fault
+#define LOGIC_RAIL_DIV_R1 4700
+#define LOGIC_RAIL_DIV_R2 1000
+#define LOGIC_RAIL_THRESHOLD 4.5  //minimum voltage stepper driver logic rail can be to pass test
 
-#define DIV_INPUT_R1 4700
-#define DIV_INPUT_R2 1000
-#define MIN_INPUT_VOLTAGE 6
+#define SUPPLY_RAIL_DIV_R1 4700
+#define SUPPLY_RAIL_DIV_R2 1000
+#define SUPPLY_RAIL_THRESHOLD 1    //minimum amount below input rail stepper supply rail can be to pass test
 
 #define RAIL_SHORT_WAIT_TIME 250
 
@@ -84,13 +84,13 @@ void setup() {
   stepper.enableMotor(false);
 
   //Power rail pin initialisation
-  pinMode(EN_12V,       OUTPUT);
-  pinMode(EN_5V,        OUTPUT); 
-  pinMode(TEST_INPUT,   INPUT);
-  pinMode(TEST_12V,     INPUT);
-  pinMode(TEST_5V,      INPUT);
-  digitalWrite(EN_12V,  HIGH);
-  digitalWrite(EN_5V,   HIGH);
+  pinMode(POWER_MOTOR_SUPPLY_EN,      OUTPUT);
+  pinMode(POWER_MOTOR_LOGIC_EN,       OUTPUT); 
+  pinMode(POWER_BOARD_INPUT_TEST,     INPUT);
+  pinMode(POWER_MOTOR_SUPPLY_TEST,    INPUT);
+  pinMode(POWER_MOTOR_LOGIC_TEST,     INPUT);
+  digitalWrite(POWER_MOTOR_SUPPLY_EN, HIGH);
+  digitalWrite(POWER_MOTOR_LOGIC_EN,  HIGH);
 
   //Button and LEDs initialisation
   pinMode(TEST_BUTTON,  INPUT_PULLUP);
@@ -132,7 +132,7 @@ bool runTest() {
   float rail_input;
 
   if(!failed) {
-    rail_input = dividerVoltage(analogRead(TEST_INPUT), DIV_INPUT_R1, DIV_INPUT_R2);
+    rail_input = dividerVoltage(analogRead(POWER_BOARD_INPUT_TEST), INPUT_RAIL_DIV_R1, INPUT_RAIL_DIV_R2);
     Serial.print("Testing input voltage... ");
     Serial.print(rail_input);
     Serial.print("V... ");
@@ -140,7 +140,7 @@ bool runTest() {
     display.print(F("Input power...  "));
     display.display();
 
-    if(rail_input < MIN_INPUT_VOLTAGE) {
+    if(rail_input < INPUT_RAIL_THRESHOLD) {
       failed = true;
       alignCursorRight(4);
       display.println(F("fail"));
@@ -156,11 +156,11 @@ bool runTest() {
     Serial.print(F("Enabling 5V line... "));
     display.print(F("5V line...  "));
     display.display();
-    digitalWrite(EN_5V,  LOW);
+    digitalWrite(POWER_MOTOR_LOGIC_EN,  LOW);
     delay(RAIL_SHORT_WAIT_TIME);   
-    float rail_5V = dividerVoltage(analogRead(TEST_5V), DIV_5V_R1, DIV_5V_R2);
+    float rail_5V = dividerVoltage(analogRead(POWER_MOTOR_LOGIC_TEST), LOGIC_RAIL_DIV_R1, LOGIC_RAIL_DIV_R2);
   
-    if(rail_5V < RAIL_5V_THRESHOLD) {
+    if(rail_5V < LOGIC_RAIL_THRESHOLD) {
       failed = true;
       alignCursorRight(4);
       display.println(F("fail"));
@@ -177,11 +177,11 @@ bool runTest() {
     Serial.print(F("Enabling 12V line... "));
     display.print(F("12V line... "));
     display.display();
-    digitalWrite(EN_12V,  LOW); 
+    digitalWrite(POWER_MOTOR_SUPPLY_EN,  LOW); 
     delay(RAIL_SHORT_WAIT_TIME);   
-    float rail_12V = dividerVoltage(analogRead(TEST_12V), DIV_12V_R1, DIV_12V_R2);
+    float rail_12V = dividerVoltage(analogRead(POWER_MOTOR_SUPPLY_TEST), SUPPLY_RAIL_DIV_R1, SUPPLY_RAIL_DIV_R2);
         
-    if(rail_12V < (rail_input - RAIL_12V_THRESHOLD)) {
+    if(rail_12V < (rail_input - SUPPLY_RAIL_THRESHOLD)) {
       failed = true;
       alignCursorRight(4);
       display.println(F("fail"));
@@ -342,8 +342,8 @@ bool runTest() {
   /////////////////////////////////////////////////////////////////////
   // Test is completed. Disable power to stepper driver.
   /////////////////////////////////////////////////////////////////////
-  digitalWrite(EN_5V,  HIGH);
-  digitalWrite(EN_12V, HIGH);
+  digitalWrite(POWER_MOTOR_LOGIC_EN,  HIGH);
+  digitalWrite(POWER_MOTOR_SUPPLY_EN, HIGH);
   stepper.enableMotor(false);
 
   if(failed) {
