@@ -23,10 +23,11 @@
 #define LED_RED       12
 #define BUZZER        9
 
-#define PASSED_BUZZER_FREQ  440
-#define FAILED_BUZZER_FREQ  98
-#define TICK_BUZZER_FREQ    300
-#define TICK_BUZZER_DUR     10
+#define BUZZER_PASSED_FREQ  440
+#define BUZZER_FAILED_FREQ  98
+#define BUZZER_PASSFAIL_DUR 500
+#define BUZZER_TICK_FREQ    300
+#define BUZZER_TICK_DUR     10
 
 #define LCD_RST       10
 Adafruit_SSD1306 display(LCD_RST);
@@ -101,7 +102,7 @@ void setup() {
   //Indicate setup complete
   digitalWrite(LED_GREEN, HIGH);
   digitalWrite(LED_RED, HIGH);
-  tone(BUZZER, PASSED_BUZZER_FREQ, 500);
+  tone(BUZZER, BUZZER_PASSED_FREQ, BUZZER_PASSFAIL_DUR);
   delay(1000);
   digitalWrite(LED_GREEN, LOW);
   digitalWrite(LED_RED, LOW);
@@ -348,12 +349,12 @@ bool runTest() {
 
   if(failed) {
     digitalWrite(LED_RED, HIGH);
-    tone(BUZZER, FAILED_BUZZER_FREQ, 500);
+    tone(BUZZER, BUZZER_FAILED_FREQ, BUZZER_PASSFAIL_DUR);
     display.println(F("Test failed!"));
     display.display();
   } else {
     digitalWrite(LED_GREEN, HIGH);
-    tone(BUZZER, PASSED_BUZZER_FREQ, 500);
+    tone(BUZZER, BUZZER_PASSED_FREQ, BUZZER_PASSFAIL_DUR);
     display.println(F("Test passed!"));
     display.display();
   }
@@ -418,7 +419,7 @@ void configurationScreen() {
       stepper.setDriverType(0);
     }
     //Serial.print(F(" increment"));
-    tone(BUZZER, TICK_BUZZER_FREQ, TICK_BUZZER_DUR);
+    tone(BUZZER, BUZZER_TICK_FREQ, BUZZER_TICK_DUR);
     oldAngle = newAngle;
   }
 
@@ -428,7 +429,7 @@ void configurationScreen() {
       stepper.setDriverType(DRIVER_TYPE_COUNT-1);
     }
     //Serial.print(F("decrement"));
-    tone(BUZZER, TICK_BUZZER_FREQ, TICK_BUZZER_DUR);
+    tone(BUZZER, BUZZER_TICK_FREQ, BUZZER_TICK_DUR);
     oldAngle = newAngle;
   }
 
