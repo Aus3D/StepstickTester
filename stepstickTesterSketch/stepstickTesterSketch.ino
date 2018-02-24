@@ -135,10 +135,17 @@ bool runTest() {
     Serial.print(rail_input);
     Serial.print("V... ");
 
+    display.print(F("Input power...  "));
+    display.display();
+
     if(rail_input < MIN_INPUT_VOLTAGE) {
       failed = true;
+      alignCursorRight(4);
+      display.println(F("fail"));
       Serial.println(F("fail"));
     } else {
+      alignCursorRight(4);
+      display.println(F("pass"));
       Serial.println(F("pass"));
     }
   }
