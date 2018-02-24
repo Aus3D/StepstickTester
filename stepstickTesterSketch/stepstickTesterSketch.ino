@@ -66,6 +66,7 @@ void setup() {
   display.setTextColor(WHITE);
   display.setTextWrap(false);
   display.clearDisplay();
+  display.display();
 
   //Initialise serial
   Serial.begin(250000);
