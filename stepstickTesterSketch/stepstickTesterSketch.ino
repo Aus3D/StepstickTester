@@ -16,6 +16,7 @@
 #define EN_5V         A0
 #define TEST_5V       A2
 #define TEST_12V      A3
+#define TEST_INPUT    A1
 
 #define TEST_BUTTON   8
 #define LED_GREEN     11
@@ -35,7 +36,12 @@ Adafruit_SSD1306 display(LCD_RST);
 
 #define DIV_12V_R1 4700
 #define DIV_12V_R2 1000
-#define RAIL_12V_THRESHOLD 10
+#define RAIL_12V_THRESHOLD 1  //voltage rail_12v can be below rail_input before there is a fault
+
+#define DIV_INPUT_R1 4700
+#define DIV_INPUT_R2 1000
+#define MIN_INPUT_VOLTAGE 6
+
 #define RAIL_SHORT_WAIT_TIME 250
 
 #define HAVE_ROTATIONAL_ENCODER true    //if we don't have an encoder, the user must watch the motor and verify it behaves correctly
@@ -77,7 +83,8 @@ void setup() {
 
   //Power rail pin initialisation
   pinMode(EN_12V,       OUTPUT);
-  pinMode(EN_5V,        OUTPUT);  
+  pinMode(EN_5V,        OUTPUT); 
+  pinMode(TEST_INPUT,   INPUT);
   pinMode(TEST_12V,     INPUT);
   pinMode(TEST_5V,      INPUT);
   digitalWrite(EN_12V,  HIGH);
@@ -120,6 +127,21 @@ bool runTest() {
   digitalWrite(LED_RED, LOW);
 
   unsigned long testStartTime = millis();
+  float rail_input;
+
+  if(!failed) {
+    rail_input = dividerVoltage(analogRead(TEST_INPUT), DIV_INPUT_R1, DIV_INPUT_R2);
+    Serial.print("Testing input voltage... ");
+    Serial.print(rail_input);
+    Serial.print("V... ");
+
+    if(rail_input < MIN_INPUT_VOLTAGE) {
+      failed = true;
+      Serial.println(F("fail"));
+    } else {
+      Serial.println(F("pass"));
+    }
+  }
 
   if(!failed) {
     Serial.print(F("Enabling 5V line... "));
@@ -150,7 +172,7 @@ bool runTest() {
     delay(RAIL_SHORT_WAIT_TIME);   
     float rail_12V = dividerVoltage(analogRead(TEST_12V), DIV_12V_R1, DIV_12V_R2);
         
-    if(rail_12V < RAIL_12V_THRESHOLD) {
+    if(rail_12V < (rail_input - RAIL_12V_THRESHOLD)) {
       failed = true;
       alignCursorRight(4);
       display.println(F("fail"));
