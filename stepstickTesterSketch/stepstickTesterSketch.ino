@@ -25,7 +25,8 @@
 
 #define PASSED_BUZZER_FREQ  440
 #define FAILED_BUZZER_FREQ  98
-#define TICK_BUZZER_FREQ    1000
+#define TICK_BUZZER_FREQ    300
+#define TICK_BUZZER_DUR     10
 
 #define LCD_RST       10
 Adafruit_SSD1306 display(LCD_RST);
@@ -424,7 +425,7 @@ void configurationScreen() {
       stepper.setDriverType(0);
     }
     //Serial.print(F(" increment"));
-    tone(BUZZER, TICK_BUZZER_FREQ, 50);
+    tone(BUZZER, TICK_BUZZER_FREQ, TICK_BUZZER_DUR);
     oldAngle = newAngle;
   }
 
@@ -434,7 +435,7 @@ void configurationScreen() {
       stepper.setDriverType(DRIVER_TYPE_COUNT-1);
     }
     //Serial.print(F("decrement"));
-    tone(BUZZER, TICK_BUZZER_FREQ, 10);
+    tone(BUZZER, TICK_BUZZER_FREQ, TICK_BUZZER_DUR);
     oldAngle = newAngle;
   }
 
