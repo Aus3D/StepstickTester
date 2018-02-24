@@ -134,9 +134,9 @@ bool runTest() {
 
   if(!failed) {
     rail_input = dividerVoltage(analogRead(POWER_BOARD_INPUT_TEST), INPUT_RAIL_DIV_R1, INPUT_RAIL_DIV_R2);
-    Serial.print("Testing input voltage... ");
+    Serial.print(F("Testing input voltage... "));
     Serial.print(rail_input);
-    Serial.print("V... ");
+    Serial.print(F("V... "));
 
     display.print(F("Input power...  "));
     display.display();
