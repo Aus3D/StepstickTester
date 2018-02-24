@@ -238,7 +238,7 @@ bool runTest() {
 
         if(HAVE_ROTATIONAL_ENCODER) {
           int forwardPosition = readEncoderAngle();
-          angularDiff = abs(angularDifference(startPosition, forwardPosition));
+          angularDiff = angularDifference(startPosition, forwardPosition);
 
           Serial.print(F("Start angle: "));
           Serial.print(startPosition);
@@ -271,7 +271,7 @@ bool runTest() {
 
         if(HAVE_ROTATIONAL_ENCODER) {
           int returnedPosition = readEncoderAngle();
-          angularDiff = abs(angularDifference(startPosition, returnedPosition));
+          angularDiff = angularDifference(startPosition, returnedPosition);
 
           Serial.print(F("Start angle: "));
           Serial.print(startPosition);
@@ -305,7 +305,7 @@ bool runTest() {
 
         if(HAVE_ROTATIONAL_ENCODER) {
           int disabledPosition = readEncoderAngle();
-          angularDiff = abs(angularDifference(startPosition, disabledPosition));
+          angularDiff = angularDifference(startPosition, disabledPosition);
 
           Serial.print(F("Start angle: "));
           Serial.print(startPosition);
@@ -371,7 +371,10 @@ float dividerVoltage(int analogReading, int R1, int R2) {
 }
 
 int angularDifference(int angleA, int angleB) {
-  return 180 - abs(abs(angleA - angleB) - 180);
+  int difference = angleA - angleB;
+  while (difference < -180) difference += 360;
+  while (difference > 180) difference -= 360;
+  return difference;
 }
 
 int readEncoderAngle() {
@@ -427,7 +430,7 @@ void configurationScreen() {
 
   if(angDiff < -90) {
     stepper.setDriverType(stepper.getDriverType() - 1);
-    if(stepper.getDriverType() == 0) {
+    if(stepper.getDriverType() < 0) {
       stepper.setDriverType(DRIVER_TYPE_COUNT-1);
     }
     //Serial.print(F("decrement"));
