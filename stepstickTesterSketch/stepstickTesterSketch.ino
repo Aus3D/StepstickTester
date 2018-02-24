@@ -383,15 +383,7 @@ int readEncoderAngle() {
   return (int)round(convertRawAngleToDegrees(ams5600.getRawAngle()));
 }
 
-/*******************************************************
-/* Function: convertRawAngleToDegrees
-/* In: angle data from AMS_5600::getRawAngle
-/* Out: human readable degrees as float
-/* Description: takes the raw angle and calculates 
-/* float value in degrees.
-/*******************************************************/
-float convertRawAngleToDegrees(word newAngle)
-{
+float convertRawAngleToDegrees(word newAngle) {
   /* Raw data reports 0 - 4095 segments, which is 0.087 of a degree */    
   float retVal = newAngle * 0.087;
   return retVal;
