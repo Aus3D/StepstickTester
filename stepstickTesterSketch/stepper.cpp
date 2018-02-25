@@ -100,7 +100,12 @@ int Stepper::getDriverType() {
   return _driver_type_num;
 }
 
-char * Stepper::getDriverTypeName() {
-  return _driver.driver_name;;
+static char * Stepper::getDriverTypeName(int type) {
+  if(type < 0) {
+    type = 0;
+  } else if (type >= DRIVER_TYPE_COUNT) {
+    type = DRIVER_TYPE_COUNT-1;
+  }
+  return drivers.drivers[type].driver_name;
 }
 

@@ -37,7 +37,7 @@ public:
 	void setDirectionForward(bool forward);
 	void setMotorSpeed(float speed);
   void setDriverType(int type);
-  char * getDriverTypeName();
+  static char * getDriverTypeName(int type);
   int getDriverType();
 
 private:

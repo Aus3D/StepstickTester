@@ -56,6 +56,39 @@ Adafruit_SSD1306 display(LCD_RST);
 Stepper stepper(STEPPER_STEP, STEPPER_DIR, STEPPER_EN, STEPPER_MS1, STEPPER_MS2, STEPPER_MS3, DRIVER_TYPE_DRV8825);
 AMS_5600 ams5600;
 
+
+typedef struct {
+  char PROGMEM menuItemText[18];
+  int *setVarPtr;
+  int  setVarDef;
+  int  setVarMin;
+  int  setVarMax;
+  char * (*returnFunc)(int);
+} menuItem;
+
+int testSpeedVar;
+int testRangeVar;
+int testStartVar;
+int driverTypeVar;
+
+char * menuItemValToChar(int val);
+
+
+menuItem testDriver = {"Driver Type...   ",&driverTypeVar,0,0,1,&(stepper.getDriverTypeName)};
+menuItem testSpeed = {"Motor Speed...   ",&testSpeedVar,5,1,10,&(menuItemValToChar)};
+
+//menuItem testRange = {"Test Range...",false,true,30};
+//menuItem testStart = {"Start Test",false,false,0};
+
+
+typedef struct {
+  menuItem menuItems[2];
+  int menuItemNum;
+} menu;
+
+menu optionsMenu = {{testDriver}, 1};
+
+
 void setup() {
 
   //Initialise I2C for display and AS5600 encoder
@@ -73,7 +106,7 @@ void setup() {
   Serial.begin(250000);
   Serial.println(F("Beginning stepper test sketch..."));
   Serial.print(F("Driver Type: "));
-  Serial.println(stepper.getDriverTypeName());
+  Serial.println(stepper.getDriverTypeName(stepper.getDriverType()));
 
   //Stepper pin initialisation
   pinMode(STEPPER_STEP, OUTPUT);
@@ -392,26 +425,50 @@ void alignCursorRight(int characters) {
 }
 
 void configurationScreen() {
-  static int menuItemNum = 0;
-  static int menuItemVal = 0;
+  int menuItemNum = 0;
+  int menuItemVal=optionsMenu.menuItems[menuItemNum].setVarDef; 
   bool finished = false;
-  static bool buttonPressed = false;
-
-  int testSpeed = 5;
-  int testSpeedMin = 1;
-  int testSpeedMax = 10;
+  bool buttonPressed = false;
 
   while(finished == false) {
     
     display.clearDisplay();
     display.setCursor(0,0);
-    char valBuffer[10];
+    display.println("Configuration");
 
-    drawMenuItem(0, menuItemNum, "Driver Type:        ", stepper.getDriverTypeName());
+    for(int i = 0; i < optionsMenu.menuItemNum; i++) {
+        if(i == menuItemNum) {
+          display.setTextColor(BLACK, WHITE);
 
-    itoa(testSpeed,valBuffer,10);
-    drawMenuItem(1, menuItemNum, "Test Speed:          ", valBuffer);
-    drawMenuItem(2, menuItemNum, "Begin Test", "");
+          while(menuItemVal > optionsMenu.menuItems[i].setVarMax) {
+            menuItemVal = optionsMenu.menuItems[i].setVarMin;
+          }
+
+          while(menuItemVal < optionsMenu.menuItems[i].setVarMin) {
+            menuItemVal = optionsMenu.menuItems[i].setVarMax;
+          }
+
+          *optionsMenu.menuItems[i].setVarPtr = menuItemVal; //optionsMenu.menuItems[i].setVarDef + 
+
+        }
+      
+        //itoa(*optionsMenu.menuItems[i].setVarPtr,valBuffer,10);
+        display.print(optionsMenu.menuItems[i].menuItemText);
+        alignCursorRight(strlen((*optionsMenu.menuItems[i].returnFunc)(*optionsMenu.menuItems[i].setVarPtr)));
+        display.println((*optionsMenu.menuItems[i].returnFunc)(*optionsMenu.menuItems[i].setVarPtr));
+
+        //alignCursorRight(strlen(menuItemValToChar(*optionsMenu.menuItems[i].setVarPtr)));
+        //display.println(menuItemValToChar(*optionsMenu.menuItems[i].setVarPtr));
+
+        if(i == menuItemNum) {
+          display.setTextColor(WHITE, BLACK);
+        }
+    }
+
+    //drawMenuItem(0, menuItemNum, "Driver Type:        ", stepper.getDriverTypeName());
+    //itoa(testSpeed,valBuffer,10);
+    //drawMenuItem(1, menuItemNum, "Test Speed:          ", valBuffer);
+    //drawMenuItem(2, menuItemNum, "Begin Test", "");
 
     display.display();
   
@@ -419,12 +476,12 @@ void configurationScreen() {
     int newAngle = readEncoderAngle();
     int angDiff = angularDifference(oldAngle, newAngle);
   
-    Serial.print(F("old angle: \t"));
-    Serial.print(oldAngle);
-    Serial.print(F("\tnew angle: \t"));
-    Serial.print(newAngle);
-    Serial.print(F("\tdiff: \t"));
-    Serial.print(angDiff);
+    //Serial.print(F("old angle: \t"));
+    //Serial.print(oldAngle);
+    //Serial.print(F("\tnew angle: \t"));
+    //Serial.print(newAngle);
+    //Serial.print(F("\tdiff: \t"));
+    //Serial.print(angDiff);
     Serial.print(F("\tmenu num: \t"));
     Serial.print(menuItemNum);
     Serial.print(F("\tmenu val: \t"));
@@ -442,39 +499,12 @@ void configurationScreen() {
       tone(BUZZER, BUZZER_TICK_FREQ, BUZZER_TICK_DUR);
       oldAngle = newAngle;
     }
-  
-    switch(menuItemNum) {
-      case 0:
-        stepper.setDriverType(menuItemVal % 2);
-        if(stepper.getDriverType() < 0) {
-          stepper.setDriverType(DRIVER_TYPE_COUNT-1);
-        }
-        if(stepper.getDriverType() >= DRIVER_TYPE_COUNT) {
-          stepper.setDriverType(0);
-        }
-        break;
-      case 1:
-        static int initialSpeed = testSpeed;
-        testSpeed = menuItemVal + initialSpeed;
-        while(testSpeed > testSpeedMax) {
-          testSpeed -= testSpeedMax;
-        } 
-        while(testSpeed < testSpeedMin) {
-          testSpeed += testSpeedMax;
-        }
-
-        break;
-      case 3:
-        finished = true;
-        break;
-        
-    }
 
     if(digitalRead(TEST_BUTTON) == LOW) {
       delay(10);
       if(digitalRead(TEST_BUTTON) == LOW && buttonPressed == false) {
         menuItemNum++;
-        menuItemVal=0;
+        menuItemVal=optionsMenu.menuItems[menuItemNum].setVarDef; 
         buttonPressed = true;
       }
     } else {
@@ -483,17 +513,8 @@ void configurationScreen() {
   }
 }
 
-void drawMenuItem(int itemNum, int activeNum, char *itemText, char *itemVal) {
-  if(itemNum == activeNum) {
-    display.setTextColor(BLACK, WHITE);
-  }
-    display.print(itemText);
-
-  alignCursorRight(strlen(itemVal));
-  display.println(itemVal);
-  
-  if(itemNum == activeNum) {
-    display.setTextColor(WHITE, BLACK);
-  }
+char * menuItemValToChar(int val) {
+  char valBuffer[8];
+  itoa(val,valBuffer,8);
+  return valBuffer;
 }
-
