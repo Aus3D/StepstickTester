@@ -28,7 +28,7 @@ DItemRevisionGUID=
 ReportSuppressedErrorsInMessages=0
 FSMCodingStyle=eFMSDropDownList_OneProcess
 FSMEncodingStyle=eFMSDropDownList_OneHot
-OutputPath=Project Outputs for StepstickTester
+OutputPath=
 LogFolderPath=
 ManagedProjectGUID=
 LinkedManagedProjectGUID=
@@ -149,24 +149,24 @@ DocumentPath=Project Outputs for StepstickTester\stepstickTester.TXT
 DItemRevisionGUID=
 
 [Parameter1]
-Name=Project URL 2
-Value=www.aus3d.com/
+Name=Drawn By
+Value=Chris Barr
 
 [Parameter2]
-Name=Project URL 1
-Value=github.com/Aus3D/
+Name=Project License
+Value=GPLv3
 
 [Parameter3]
 Name=Project Revision
 Value=1.0A
 
 [Parameter4]
-Name=Project License
-Value=GPLv3
+Name=Project URL 1
+Value=github.com/Aus3D/
 
 [Parameter5]
-Name=Drawn By
-Value=Chris Barr
+Name=Project URL 2
+Value=www.aus3d.com/
 
 [Configuration1]
 Name=Sources
@@ -214,7 +214,7 @@ SCH_HasExpandLogicalToPhysicalSheets=-1
 SaveSettingsToOutJob=-1
 
 [Generic_EDE]
-OutputDir=Project Outputs for StepstickTester
+OutputDir=
 
 [OutputGroup1]
 Name=Netlist Outputs
