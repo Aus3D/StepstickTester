@@ -108,10 +108,7 @@ void setup() {
   digitalWrite(LED_RED, LOW);
   Serial.println(F("End of Setup"));
 
-  while(digitalRead(TEST_BUTTON) == HIGH) {
-    //Print startup screen
-    configurationScreen();
-  } 
+  configurationScreen();
 }
 
 void loop() {
@@ -395,48 +392,108 @@ void alignCursorRight(int characters) {
 }
 
 void configurationScreen() {
-  display.clearDisplay();
-  display.setCursor(0,0);
-  display.println(F("Configuration:"));
-  display.print(F("Driver Type: "));
-  display.println(stepper.getDriverTypeName());
-  display.display();
+  static int menuItemNum = 0;
+  static int menuItemVal = 0;
+  bool finished = false;
+  static bool buttonPressed = false;
 
-  static int oldAngle = readEncoderAngle();
-  int newAngle = readEncoderAngle();
-  int angDiff = angularDifference(oldAngle, newAngle);
+  int testSpeed = 5;
+  int testSpeedMin = 1;
+  int testSpeedMax = 10;
 
-  //Serial.print(F("old angle: \t"));
-  //Serial.print(oldAngle);
-  //Serial.print(F("\tnew angle: \t"));
-  //Serial.print(newAngle);
-  //Serial.print(F("\tdiff: \t"));
-  //Serial.print(angDiff);
+  while(finished == false) {
+    
+    display.clearDisplay();
+    display.setCursor(0,0);
+    char valBuffer[10];
 
-  if(angDiff > 90) {
-    stepper.setDriverType(stepper.getDriverType() + 1);
-    if(stepper.getDriverType() >= DRIVER_TYPE_COUNT) {
-      stepper.setDriverType(0);
+    drawMenuItem(0, menuItemNum, "Driver Type:        ", stepper.getDriverTypeName());
+
+    itoa(testSpeed,valBuffer,10);
+    drawMenuItem(1, menuItemNum, "Test Speed:          ", valBuffer);
+    drawMenuItem(2, menuItemNum, "Begin Test", "");
+
+    display.display();
+  
+    static int oldAngle = readEncoderAngle();
+    int newAngle = readEncoderAngle();
+    int angDiff = angularDifference(oldAngle, newAngle);
+  
+    Serial.print(F("old angle: \t"));
+    Serial.print(oldAngle);
+    Serial.print(F("\tnew angle: \t"));
+    Serial.print(newAngle);
+    Serial.print(F("\tdiff: \t"));
+    Serial.print(angDiff);
+    Serial.print(F("\tmenu num: \t"));
+    Serial.print(menuItemNum);
+    Serial.print(F("\tmenu val: \t"));
+    Serial.print(menuItemVal);
+    Serial.println();
+  
+    if(angDiff > 90) {
+      menuItemVal++;
+      tone(BUZZER, BUZZER_TICK_FREQ, BUZZER_TICK_DUR);
+      oldAngle = newAngle;
     }
-    //Serial.print(F(" increment"));
-    tone(BUZZER, BUZZER_TICK_FREQ, BUZZER_TICK_DUR);
-    oldAngle = newAngle;
-  }
-
-  if(angDiff < -90) {
-    stepper.setDriverType(stepper.getDriverType() - 1);
-    if(stepper.getDriverType() < 0) {
-      stepper.setDriverType(DRIVER_TYPE_COUNT-1);
+  
+    if(angDiff < -90) {
+      menuItemVal--;
+      tone(BUZZER, BUZZER_TICK_FREQ, BUZZER_TICK_DUR);
+      oldAngle = newAngle;
     }
-    //Serial.print(F("decrement"));
-    tone(BUZZER, BUZZER_TICK_FREQ, BUZZER_TICK_DUR);
-    oldAngle = newAngle;
-  }
+  
+    switch(menuItemNum) {
+      case 0:
+        stepper.setDriverType(menuItemVal % 2);
+        if(stepper.getDriverType() < 0) {
+          stepper.setDriverType(DRIVER_TYPE_COUNT-1);
+        }
+        if(stepper.getDriverType() >= DRIVER_TYPE_COUNT) {
+          stepper.setDriverType(0);
+        }
+        break;
+      case 1:
+        static int initialSpeed = testSpeed;
+        testSpeed = menuItemVal + initialSpeed;
+        while(testSpeed > testSpeedMax) {
+          testSpeed -= testSpeedMax;
+        } 
+        while(testSpeed < testSpeedMin) {
+          testSpeed += testSpeedMax;
+        }
 
-  //Serial.print("\t");
-  //Serial.print(stepper.getDriverType());
-  //Serial.print("\t");
-  //Serial.print(stepper.getDriverTypeName());
-  //Serial.println();
+        break;
+      case 3:
+        finished = true;
+        break;
+        
+    }
+
+    if(digitalRead(TEST_BUTTON) == LOW) {
+      delay(10);
+      if(digitalRead(TEST_BUTTON) == LOW && buttonPressed == false) {
+        menuItemNum++;
+        menuItemVal=0;
+        buttonPressed = true;
+      }
+    } else {
+      buttonPressed = false;
+    }
+  }
+}
+
+void drawMenuItem(int itemNum, int activeNum, char *itemText, char *itemVal) {
+  if(itemNum == activeNum) {
+    display.setTextColor(BLACK, WHITE);
+  }
+    display.print(itemText);
+
+  alignCursorRight(strlen(itemVal));
+  display.println(itemVal);
+  
+  if(itemNum == activeNum) {
+    display.setTextColor(WHITE, BLACK);
+  }
 }
 
