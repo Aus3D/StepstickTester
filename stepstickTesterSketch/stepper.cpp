@@ -30,6 +30,8 @@ const driverType a4988 = {
   "A4988"
 };
 
+const driverList drivers = {{a4988, drv8825}, DRIVER_TYPE_COUNT};
+
 Stepper::Stepper(int STEP_PIN, int DIR_PIN, int EN_PIN, int MS1_PIN, int MS2_PIN, int MS3_PIN, int type)
 {
 	_step_pin = STEP_PIN;
@@ -91,14 +93,7 @@ void Stepper::setMotorSpeed(float speed) {
 
 void Stepper::setDriverType(int type) {
   _driver_type_num = type;
-  switch(_driver_type_num) {
-    case DRIVER_TYPE_A4988: 
-      _driver = a4988;
-      break;
-    case DRIVER_TYPE_DRV8825:
-      _driver = drv8825;
-      break;
-  }
+  _driver = drivers.drivers[_driver_type_num];
 }
 
 int Stepper::getDriverType() {

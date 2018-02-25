@@ -19,6 +19,10 @@ typedef struct {
   char driver_name[8];
 } driverType;
 
+typedef struct {
+  driverType drivers[DRIVER_TYPE_COUNT];
+  byte driverCount;
+} driverList;
 
 class Stepper
 {
