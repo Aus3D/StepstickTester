@@ -1,37 +1,34 @@
 #include "Arduino.h"
 #include "stepper.h"
 
-driverType drv8825 = {
+const driverType drv8825 = {
 	.microsteps = {
-	{0, 0, 0, 1},
-	{1, 0, 0, 2},
-	{0, 1, 0, 4},
-	{1, 1, 0, 8},
-	{0, 0, 1, 16},
-	{1, 0, 1, 32},
-	{0, 1, 1, 32},
-	{1, 1, 1, 32}},
+	{0b000, 1},
+	{0b001, 2},
+	{0b010, 4},
+	{0b011, 8},
+	{0b100, 16},
+	{0b101, 32},
+	{0b110, 32},
+	{0b111, 32}},
 	.microsteppingModes = 6,
 	.enable_inverted = true,
 	.dir_inverted = false,
   "DRV8825"
 };
 
-driverType a4988 = {
+const driverType a4988 = {
 	.microsteps = {
-	{0, 0, 0, 1},
-	{1, 0, 0, 2},
-	{0, 1, 0, 4},
-	{1, 1, 0, 8},
-	{1, 1, 1, 16}},
+	{0b000, 1},
+	{0b001, 2},
+	{0b010, 4},
+	{0b011, 8},
+	{0b111, 16}},
 	.microsteppingModes = 5,
 	.enable_inverted = true,
 	.dir_inverted = false,
   "A4988"
 };
-
-
-
 
 Stepper::Stepper(int STEP_PIN, int DIR_PIN, int EN_PIN, int MS1_PIN, int MS2_PIN, int MS3_PIN, int type)
 {
@@ -65,9 +62,9 @@ void Stepper::setMicrosteppingMode(int mode) {
 	if(mode >= 0 && mode < getMicrosteppingModes()) {
 		_microsteppingMode = mode;
 
-		digitalWrite(_ms1_pin, _driver.microsteps[mode].ms1_state);
-		digitalWrite(_ms2_pin, _driver.microsteps[mode].ms2_state);
-		digitalWrite(_ms3_pin, _driver.microsteps[mode].ms3_state);
+		digitalWrite(_ms1_pin, bitRead(_driver.microsteps[mode].pin_states,0));
+		digitalWrite(_ms2_pin, bitRead(_driver.microsteps[mode].pin_states,1));
+		digitalWrite(_ms3_pin, bitRead(_driver.microsteps[mode].pin_states,2));
 	}
 }
 

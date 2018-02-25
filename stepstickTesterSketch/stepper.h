@@ -7,15 +7,13 @@
 #define DRIVER_TYPE_COUNT   2
 
 typedef struct {
-	bool ms1_state;
-	bool ms2_state;
-	bool ms3_state;
-	int step_multiplier; 
+	byte pin_states;
+	byte step_multiplier; 
 } microsteppingMode;
 
 typedef struct {
 	microsteppingMode microsteps[8];
-	int microsteppingModes;
+	byte microsteppingModes;
 	bool enable_inverted;
 	bool dir_inverted;
   char driver_name[8];
@@ -41,13 +39,13 @@ public:
 private:
 	driverType _driver;
 
-	int _microsteppingMode;
-	int _step_pin;
-	int _dir_pin;
-	int _en_pin;
-	int _ms1_pin;
-	int _ms2_pin;
-	int _ms3_pin;
+	byte _microsteppingMode;
+	byte _step_pin;
+	byte _dir_pin;
+	byte _en_pin;
+	byte _ms1_pin;
+	byte _ms2_pin;
+	byte _ms3_pin;
 
 	int _stepsPerRevolution = 200;
 	float _speed = 1;
