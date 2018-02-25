@@ -108,9 +108,7 @@ int Stepper::getDriverType() {
   return _driver_type_num;
 }
 
-String Stepper::getDriverTypeName() {
-  //return String str((char*)_driver.driver_name);
-  String driverTypeName = _driver.driver_name;
-  return driverTypeName;
+char * Stepper::getDriverTypeName() {
+  return _driver.driver_name;;
 }
 
