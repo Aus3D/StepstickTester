@@ -503,9 +503,13 @@ void configurationScreen() {
     if(digitalRead(TEST_BUTTON) == LOW) {
       delay(10);
       if(digitalRead(TEST_BUTTON) == LOW && buttonPressed == false) {
-        menuItemNum++;
-        menuItemVal=optionsMenu.menuItems[menuItemNum].setVarDef; 
-        buttonPressed = true;
+        if(menuItemNum < optionsMenu.menuItemNum) {
+          menuItemNum++;
+          menuItemVal=optionsMenu.menuItems[menuItemNum].setVarDef; 
+          buttonPressed = true;
+        } else {
+          finished = true;
+        }
       }
     } else {
       buttonPressed = false;
