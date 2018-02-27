@@ -1,5 +1,7 @@
 #include "config.h"
 #include "stepper.h"
+#include "tests.h"
+#include "util.h"
 #include <SPI.h>
 #include <Wire.h>
 #include <SSD1306Ascii.h>
@@ -40,7 +42,6 @@ typedef struct {
 menu optionsMenu = {{testDriver, testSpeed, testStart}, 3};
 
 void setup() {
-
   //Initialise I2C for display and AS5600 encoder
   Wire.begin();
   Wire.setClock(400000L);
@@ -109,214 +110,21 @@ bool runTest() {
   digitalWrite(LED_RED, LOW);
 
   unsigned long testStartTime = millis();
-  float rail_input;
 
-  if(!failed) {
-    rail_input = dividerVoltage(analogRead(POWER_BOARD_INPUT_TEST), INPUT_RAIL_DIV_R1, INPUT_RAIL_DIV_R2);
-    Serial.print(F("Testing input voltage... "));
-    Serial.print(rail_input);
-    Serial.print(F("V... "));
+  for(int i = 0; i < stepper.getDriver().test.functionCount; i++) {
+    failed = (*stepper.getDriver().test.functions[i])();
 
-    display.print(F("Input power...  "));
+    alignCursorRight(4);
 
-    if(rail_input < INPUT_RAIL_THRESHOLD) {
-      failed = true;
-      alignCursorRight(4);
+    if(failed) {
       display.println(F("fail"));
       Serial.println(F("fail"));
-    } else {
-      alignCursorRight(4);
-      display.println(F("pass"));
-      Serial.println(F("pass"));
-    }
-  }
-
-  if(!failed) {
-    Serial.print(F("Enabling 5V line... "));
-    display.print(F("5V line...  "));
-    digitalWrite(POWER_MOTOR_LOGIC_EN,  LOW);
-    delay(RAIL_SHORT_WAIT_TIME);   
-    float rail_5V = dividerVoltage(analogRead(POWER_MOTOR_LOGIC_TEST), LOGIC_RAIL_DIV_R1, LOGIC_RAIL_DIV_R2);
-  
-    if(rail_5V < LOGIC_RAIL_THRESHOLD) {
-      failed = true;
-      alignCursorRight(4);
-      display.println(F("fail"));
-      Serial.println(F("5V fail!"));
+      break;
     }  else {
-      alignCursorRight(4);
       display.println(F("pass"));
       Serial.println(F("pass"));
     }
   }
-  
-  if(!failed) {
-    Serial.print(F("Enabling 12V line... "));
-    display.print(F("12V line... "));
-    digitalWrite(POWER_MOTOR_SUPPLY_EN,  LOW); 
-    delay(RAIL_SHORT_WAIT_TIME);   
-    float rail_12V = dividerVoltage(analogRead(POWER_MOTOR_SUPPLY_TEST), SUPPLY_RAIL_DIV_R1, SUPPLY_RAIL_DIV_R2);
-        
-    if(rail_12V < (rail_input - SUPPLY_RAIL_THRESHOLD)) {
-      failed = true;
-      alignCursorRight(4);
-      display.println(F("fail"));
-      Serial.println(F("12V fail!"));
-    }  else {
-      alignCursorRight(4);
-      display.println(F("pass"));
-      Serial.println(F("pass"));
-    }
-  }
-  
-  if(!failed) {
-
-    Serial.print(F("Driver has "));
-    Serial.print(stepper.getMicrosteppingModes());
-    Serial.println(F(" microstepping modes."));
-    
-    //display.print(stepper.getMicrosteppingModes());
-    //display.print(F("DRV has "));
-    //display.println(F(" MS modes"));
-    //display.display();
-  
-    for(int i = 0; i < stepper.getMicrosteppingModes(); i++) {
-      int startPosition = readEncoderAngle(); 
-      int angularDiff;
-      
-      if(!failed) {
-        stepper.setMicrosteppingMode(i);   
-        stepper.setMotorSpeed(testSpeedVar); 
-        Serial.print(F("Testing microstepping mode "));
-        Serial.print(i);
-        Serial.print(F(" ("));
-        Serial.print(stepper.getMicrosteppingMultiplier(i));
-        Serial.println(F("x microstepping)"));   
-
-        display.print(F("MS mode "));
-        display.print(i);
-        display.print(F(" ("));
-        display.print(stepper.getMicrosteppingMultiplier(i));
-        display.print(F("x)"));
-      }
-      
-      /////////////////////////////////////////////////////////////////////
-      // Rotate by X degrees, tests MS settings and STEP pin.
-      /////////////////////////////////////////////////////////////////////
-      if(!failed) {
-        Serial.print(F("Forward rotate test... "));
-        stepper.setDirectionForward(true);
-        stepper.enableMotor(true);  
-        delay(100); 
-        stepper.moveMotor((float)MOTOR_TEST_ROTATE_DEGREES / 360.0f);   //move forward by X degrees
-
-        delay(MOTOR_TEST_REST_TIME);
-
-        if(HAVE_ROTATIONAL_ENCODER) {
-          int forwardPosition = readEncoderAngle();
-          angularDiff = abs(angularDifference(startPosition, forwardPosition));
-
-          Serial.print(F("Start angle: "));
-          Serial.print(startPosition);
-          Serial.print(F(", end angle: "));
-          Serial.print(forwardPosition);
-          Serial.print(F(", difference: "));
-          Serial.println(angularDiff);
-          
-          if(abs(angularDiff - MOTOR_TEST_ROTATE_DEGREES) > MOTOR_TEST_ANGULAR_TOLERANCE) {
-            failed = true;
-            Serial.println(F("failed!"));
-          } else {
-            Serial.println(F("passed!"));
-          }
-        } else {
-          Serial.println(F("done."));
-        }
-      }
-  
-      /////////////////////////////////////////////////////////////////////
-      // Reverse direction, rotate back by X degrees. Tests DIR pin.
-      /////////////////////////////////////////////////////////////////////
-      if(!failed) {
-        Serial.print(F("Reverse rotate test... "));
-        stepper.setDirectionForward(false);
-        delay(100);
-        stepper.moveMotor((float)MOTOR_TEST_ROTATE_DEGREES / 360.0f);   //move back by X degrees
-
-        delay(MOTOR_TEST_REST_TIME);
-
-        if(HAVE_ROTATIONAL_ENCODER) {
-          int returnedPosition = readEncoderAngle();
-          angularDiff = abs(angularDifference(startPosition, returnedPosition));
-
-          Serial.print(F("Start angle: "));
-          Serial.print(startPosition);
-          Serial.print(F(", end angle: "));
-          Serial.print(returnedPosition);
-          Serial.print(F(", difference: "));
-          Serial.println(angularDiff);
-          
-          if(abs(angularDiff) > MOTOR_TEST_ANGULAR_TOLERANCE) {
-            failed = true;
-            Serial.println(F("failed!"));
-          } else {
-            Serial.println(F("passed!"));
-          }
-        } else {
-          Serial.println(F("done."));
-        }
-      }
-      
-      /////////////////////////////////////////////////////////////////////
-      // Disable driver, attempt rotate by X degrees. Tests EN pin.
-      /////////////////////////////////////////////////////////////////////
-      if(!failed) {
-        Serial.print(F("Disabled rotate test... "));
-        stepper.setDirectionForward(true);
-        stepper.enableMotor(false);
-        delay(100);
-        stepper.moveMotor((float)20 / 360.0f);   //move forward by X degrees
-
-        delay(MOTOR_TEST_REST_TIME);
-
-        if(HAVE_ROTATIONAL_ENCODER) {
-          int disabledPosition = readEncoderAngle();
-          angularDiff = abs(angularDifference(startPosition, disabledPosition));
-
-          Serial.print(F("Start angle: "));
-          Serial.print(startPosition);
-          Serial.print(F(", end angle: "));
-          Serial.print(disabledPosition);
-          Serial.print(F(", difference: "));
-          Serial.println(angularDiff);
-      
-          if(abs(angularDiff) > MOTOR_TEST_ANGULAR_TOLERANCE) {
-            failed = true;
-            Serial.println(F("failed!"));
-          } else {
-            Serial.println(F("passed!"));
-          }  
-        } else {
-          Serial.println(F("done."));
-        }
-      }
-      if(failed) {
-        alignCursorRight(4);
-        display.println(F("fail"));
-        break;
-      } else {
-        alignCursorRight(4);
-        display.println(F("pass"));
-      }
-    }
-  }
-
-  /////////////////////////////////////////////////////////////////////
-  // Test is completed. Disable power to stepper driver.
-  /////////////////////////////////////////////////////////////////////
-  digitalWrite(POWER_MOTOR_LOGIC_EN,  HIGH);
-  digitalWrite(POWER_MOTOR_SUPPLY_EN, HIGH);
-  stepper.enableMotor(false);
 
   if(failed) {
     digitalWrite(LED_RED, HIGH);
@@ -335,37 +143,6 @@ bool runTest() {
   Serial.println(F("ms to complete."));
 
   return !failed;
-}
-
-float dividerVoltage(int analogReading, int R1, int R2) {
-  float voltage = (5.0 * ((float)analogReading / 1024)) * (R1 + R2) / (R2);
-  return voltage;
-}
-
-int angularDifference(int angleA, int angleB) {
-  int difference = angleB - angleA;
-  while (difference < -180) difference += 360;
-  while (difference > 180) difference -= 360;
-  return difference;
-}
-
-int readEncoderAngle() {
-  int angle = (int)round(convertRawAngleToDegrees(ams5600.getRawAngle()));
-  #ifdef ENCODER_INVERT
-    return 360-angle;
-  #else
-    return angle;
-  #endif
-}
-
-float convertRawAngleToDegrees(word newAngle) {
-  /* Raw data reports 0 - 4095 segments, which is 0.087 of a degree */    
-  float retVal = newAngle * 0.087;
-  return retVal;
-}
-
-void alignCursorRight(int characters) {
-  display.setCursor(display.displayWidth() - characters*6, display.row());
 }
 
 void configurationScreen() {
@@ -475,10 +252,4 @@ void configurationScreen() {
       displayChanged = false;
     }
   }
-}
-
-char * menuItemValToChar(int val) {
-  char charBuffer[10];
-  itoa(val,charBuffer,10);
-  return charBuffer;
 }

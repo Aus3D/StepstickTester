@@ -1,5 +1,15 @@
-#include "Arduino.h"
 #include "stepper.h"
+#include "Arduino.h"
+
+testProcedure drv8825_test = {
+  .functions = {
+    testFunction_testInputVoltage,
+    testFunction_test5V,
+    testFunction_test12V,
+    testFunction_testStepperMotion
+  },
+  .functionCount = 4
+};
 
 const driverType drv8825 = {
 	.microsteps = {
@@ -14,6 +24,7 @@ const driverType drv8825 = {
 	.microsteppingModes = 6,
 	.enable_inverted = true,
 	.dir_inverted = false,
+  drv8825_test,
   "DRV8825"
 };
 
@@ -27,6 +38,7 @@ const driverType a4988 = {
 	.microsteppingModes = 5,
 	.enable_inverted = true,
 	.dir_inverted = false,
+  drv8825_test,
   "A4988"
 };
 
@@ -98,6 +110,10 @@ void Stepper::setDriverType(int type) {
 
 int Stepper::getDriverType() {
   return _driver_type_num;
+}
+
+driverType Stepper::getDriver() {
+	return _driver;
 }
 
 static char * Stepper::getDriverTypeName(int type) {

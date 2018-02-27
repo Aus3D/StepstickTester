@@ -1,10 +1,13 @@
 #ifndef STEPPER_H
 #define STEPPER_H
 #include "Arduino.h"
+#include "tests.h"
 
 #define DRIVER_TYPE_A4988		0
 #define DRIVER_TYPE_DRV8825	1
 #define DRIVER_TYPE_COUNT   2
+
+typedef bool (* GenericFP)(void);
 
 typedef struct {
 	byte pin_states;
@@ -12,10 +15,16 @@ typedef struct {
 } microsteppingMode;
 
 typedef struct {
+  GenericFP functions[10];
+  int functionCount;
+} testProcedure;
+
+typedef struct {
 	microsteppingMode microsteps[8];
 	byte microsteppingModes;
 	bool enable_inverted;
 	bool dir_inverted;
+  testProcedure test;
   char driver_name[8];
 } driverType;
 
@@ -23,6 +32,7 @@ typedef struct {
   driverType drivers[DRIVER_TYPE_COUNT];
   byte driverCount;
 } driverList;
+
 
 class Stepper
 {
@@ -36,9 +46,10 @@ public:
 	void enableMotor(bool enabled);
 	void setDirectionForward(bool forward);
 	void setMotorSpeed(float speed);
-  void setDriverType(int type);
-  static char * getDriverTypeName(int type);
-  int getDriverType();
+	void setDriverType(int type);
+	static char * getDriverTypeName(int type);
+	int getDriverType();
+	driverType getDriver();
 
 private:
 	driverType _driver;

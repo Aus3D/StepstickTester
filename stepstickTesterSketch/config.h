@@ -60,6 +60,8 @@
 #define SUPPLY_RAIL_THRESHOLD 1    //minimum amount below input rail stepper supply rail can be to pass test
 
 #define RAIL_SHORT_WAIT_TIME 250
+#define POWER_DOWN_TIMEOUT	 500
+#define POWER_DOWN_THRESHOLD 1	//voltage below which the rail is considered powered-down
 
 /////////////////////////////////////////////////////////////////////
 // DRIVER TEST SETTINGS
