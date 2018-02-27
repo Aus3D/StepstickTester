@@ -2,11 +2,11 @@
 #include "stepper.h"
 #include <SPI.h>
 #include <Wire.h>
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
+#include <SSD1306Ascii.h>
+#include <SSD1306AsciiWire.h>
 #include "AMS_5600.h"
 
-Adafruit_SSD1306 display(LCD_RST);
+SSD1306AsciiWire display;
 Stepper stepper(STEPPER_STEP, STEPPER_DIR, STEPPER_EN, STEPPER_MS1, STEPPER_MS2, STEPPER_MS3, DRIVER_TYPE_DRV8825);
 AMS_5600 ams5600;
 
@@ -27,33 +27,29 @@ int driverTypeVar;
 char * menuItemValToChar(int val);
 
 
-menuItem testDriver = {"Driver Type...   ",&driverTypeVar,0,0,1,&(stepper.getDriverTypeName)};
-menuItem testSpeed = {"Motor Speed...   ",&testSpeedVar,5,1,10,&(menuItemValToChar)};
-
-//menuItem testRange = {"Test Range...",false,true,30};
-//menuItem testStart = {"Start Test",false,false,0};
+menuItem testDriver = {"Driver Type:   ",&driverTypeVar,0,0,(DRIVER_TYPE_COUNT-1),&(stepper.getDriverTypeName)};
+menuItem testSpeed  = {"Motor Speed:   ",&testSpeedVar,MOTOR_TEST_SPEED,1,10,&(menuItemValToChar)};
+menuItem testStart  = {"Begin Test",&testStartVar,0,0,0,&(menuItemValToChar)};
 
 
 typedef struct {
-  menuItem menuItems[2];
+  menuItem menuItems[5];
   int menuItemNum;
 } menu;
 
-menu optionsMenu = {{testDriver}, 1};
-
+menu optionsMenu = {{testDriver, testSpeed, testStart}, 3};
 
 void setup() {
 
   //Initialise I2C for display and AS5600 encoder
   Wire.begin();
+  Wire.setClock(400000L);
 
   //Initialise display
-  display.begin(SSD1306_SWITCHCAPVCC, 0x3D);  // initialize with the I2C addr 0x3D (for the 128x64) 
-  display.setTextSize(1);
-  display.setTextColor(WHITE);
-  display.setTextWrap(false);
-  display.clearDisplay();
-  display.display();
+  display.begin(&Adafruit128x64, 0x3D, LCD_RST);  // initialize with the I2C addr 0x3D (for the 128x64) 
+  display.setFont(Adafruit5x7);
+  display.setScroll(true);
+  display.clear();
 
   //Initialise serial
   Serial.begin(250000);
@@ -95,19 +91,19 @@ void setup() {
   Serial.println(F("End of Setup"));
 
   configurationScreen();
+  stepper.setDriverType(driverTypeVar);
 }
 
 void loop() {
-
   runTest();
+  delay(500);
   while(digitalRead(TEST_BUTTON) == HIGH) {}
-
 }
 
 bool runTest() {
   bool failed = false;
 
-  display.clearDisplay();
+  display.clear();
   display.setCursor(0,0);
   digitalWrite(LED_GREEN, LOW);
   digitalWrite(LED_RED, LOW);
@@ -122,7 +118,6 @@ bool runTest() {
     Serial.print(F("V... "));
 
     display.print(F("Input power...  "));
-    display.display();
 
     if(rail_input < INPUT_RAIL_THRESHOLD) {
       failed = true;
@@ -139,7 +134,6 @@ bool runTest() {
   if(!failed) {
     Serial.print(F("Enabling 5V line... "));
     display.print(F("5V line...  "));
-    display.display();
     digitalWrite(POWER_MOTOR_LOGIC_EN,  LOW);
     delay(RAIL_SHORT_WAIT_TIME);   
     float rail_5V = dividerVoltage(analogRead(POWER_MOTOR_LOGIC_TEST), LOGIC_RAIL_DIV_R1, LOGIC_RAIL_DIV_R2);
@@ -154,13 +148,11 @@ bool runTest() {
       display.println(F("pass"));
       Serial.println(F("pass"));
     }
-    display.display();
   }
   
   if(!failed) {
     Serial.print(F("Enabling 12V line... "));
     display.print(F("12V line... "));
-    display.display();
     digitalWrite(POWER_MOTOR_SUPPLY_EN,  LOW); 
     delay(RAIL_SHORT_WAIT_TIME);   
     float rail_12V = dividerVoltage(analogRead(POWER_MOTOR_SUPPLY_TEST), SUPPLY_RAIL_DIV_R1, SUPPLY_RAIL_DIV_R2);
@@ -175,7 +167,6 @@ bool runTest() {
       display.println(F("pass"));
       Serial.println(F("pass"));
     }
-    display.display();
   }
   
   if(!failed) {
@@ -195,7 +186,7 @@ bool runTest() {
       
       if(!failed) {
         stepper.setMicrosteppingMode(i);   
-        stepper.setMotorSpeed(MOTOR_TEST_SPEED); 
+        stepper.setMotorSpeed(testSpeedVar); 
         Serial.print(F("Testing microstepping mode "));
         Serial.print(i);
         Serial.print(F(" ("));
@@ -207,7 +198,6 @@ bool runTest() {
         display.print(F(" ("));
         display.print(stepper.getMicrosteppingMultiplier(i));
         display.print(F("x)"));
-        display.display();    
       }
       
       /////////////////////////////////////////////////////////////////////
@@ -313,12 +303,10 @@ bool runTest() {
       if(failed) {
         alignCursorRight(4);
         display.println(F("fail"));
-        display.display();
         break;
       } else {
         alignCursorRight(4);
         display.println(F("pass"));
-        display.display();
       }
     }
   }
@@ -334,12 +322,10 @@ bool runTest() {
     digitalWrite(LED_RED, HIGH);
     tone(BUZZER, BUZZER_FAILED_FREQ, BUZZER_PASSFAIL_DUR);
     display.println(F("Test failed!"));
-    display.display();
   } else {
     digitalWrite(LED_GREEN, HIGH);
     tone(BUZZER, BUZZER_PASSED_FREQ, BUZZER_PASSFAIL_DUR);
     display.println(F("Test passed!"));
-    display.display();
   }
 
   unsigned long testEndTime = millis();
@@ -374,104 +360,120 @@ float convertRawAngleToDegrees(word newAngle) {
 }
 
 void alignCursorRight(int characters) {
-  display.setCursor(display.width()-characters*6,display.getCursorY());
+  display.setCursor(display.displayWidth() - characters*6, display.row());
 }
 
 void configurationScreen() {
   int menuItemNum = 0;
-  int menuItemVal=optionsMenu.menuItems[menuItemNum].setVarDef; 
+  int menuItemVal = optionsMenu.menuItems[menuItemNum].setVarDef; 
+  int menuItemValPrev = 0;
   bool finished = false;
   bool buttonPressed = false;
+  bool displayChanged = true;
 
-  while(finished == false) {
-    
-    display.clearDisplay();
-    display.setCursor(0,0);
-    display.println("Configuration");
+  //initialise menu options to their defaults
+  for(int i = 0; i < optionsMenu.menuItemNum; i++) {
+    *optionsMenu.menuItems[i].setVarPtr = optionsMenu.menuItems[i].setVarDef;
+  }
 
-    for(int i = 0; i < optionsMenu.menuItemNum; i++) {
-        if(i == menuItemNum) {
-          display.setTextColor(BLACK, WHITE);
-
-          while(menuItemVal > optionsMenu.menuItems[i].setVarMax) {
-            menuItemVal = optionsMenu.menuItems[i].setVarMin;
-          }
-
-          while(menuItemVal < optionsMenu.menuItems[i].setVarMin) {
-            menuItemVal = optionsMenu.menuItems[i].setVarMax;
-          }
-
-          *optionsMenu.menuItems[i].setVarPtr = menuItemVal; //optionsMenu.menuItems[i].setVarDef + 
-
-        }
-      
-        //itoa(*optionsMenu.menuItems[i].setVarPtr,valBuffer,10);
-        display.print(optionsMenu.menuItems[i].menuItemText);
-        alignCursorRight(strlen((*optionsMenu.menuItems[i].returnFunc)(*optionsMenu.menuItems[i].setVarPtr)));
-        display.println((*optionsMenu.menuItems[i].returnFunc)(*optionsMenu.menuItems[i].setVarPtr));
-
-        //alignCursorRight(strlen(menuItemValToChar(*optionsMenu.menuItems[i].setVarPtr)));
-        //display.println(menuItemValToChar(*optionsMenu.menuItems[i].setVarPtr));
-
-        if(i == menuItemNum) {
-          display.setTextColor(WHITE, BLACK);
-        }
-    }
-
-    //drawMenuItem(0, menuItemNum, "Driver Type:        ", stepper.getDriverTypeName());
-    //itoa(testSpeed,valBuffer,10);
-    //drawMenuItem(1, menuItemNum, "Test Speed:          ", valBuffer);
-    //drawMenuItem(2, menuItemNum, "Begin Test", "");
-
-    display.display();
-  
+  while(!finished) {
+    delay(50);
     static int oldAngle = readEncoderAngle();
     int newAngle = readEncoderAngle();
     int angDiff = angularDifference(oldAngle, newAngle);
-  
-    //Serial.print(F("old angle: \t"));
-    //Serial.print(oldAngle);
-    //Serial.print(F("\tnew angle: \t"));
-    //Serial.print(newAngle);
-    //Serial.print(F("\tdiff: \t"));
-    //Serial.print(angDiff);
+
+    /*
+    Serial.print(F("old angle: \t"));
+    Serial.print(oldAngle);
+    Serial.print(F("\tnew angle: \t"));
+    Serial.print(newAngle);
+    Serial.print(F("\tdiff: \t"));
+    Serial.print(angDiff);
     Serial.print(F("\tmenu num: \t"));
     Serial.print(menuItemNum);
     Serial.print(F("\tmenu val: \t"));
     Serial.print(menuItemVal);
+    Serial.print(F("\titem val: \t"));
+    Serial.print(*optionsMenu.menuItems[menuItemNum].setVarPtr);
     Serial.println();
-  
-    if(angDiff > 90) {
-      menuItemVal++;
-      tone(BUZZER, BUZZER_TICK_FREQ, BUZZER_TICK_DUR);
-      oldAngle = newAngle;
-    }
-  
-    if(angDiff < -90) {
-      menuItemVal--;
-      tone(BUZZER, BUZZER_TICK_FREQ, BUZZER_TICK_DUR);
-      oldAngle = newAngle;
+    */
+
+    //Handle input from encoder
+    if(optionsMenu.menuItems[menuItemNum].setVarMax != optionsMenu.menuItems[menuItemNum].setVarMin) {
+      if(angDiff > 90) {
+        menuItemVal++;
+        tone(BUZZER, BUZZER_TICK_FREQ, BUZZER_TICK_DUR);
+        oldAngle = newAngle;
+        displayChanged = true;
+      }
+    
+      if(angDiff < -90) {
+        menuItemVal--;
+        tone(BUZZER, BUZZER_TICK_FREQ, BUZZER_TICK_DUR);
+        oldAngle = newAngle;
+        displayChanged = true;
+      }
     }
 
+    //Handle button input
     if(digitalRead(TEST_BUTTON) == LOW) {
       delay(10);
       if(digitalRead(TEST_BUTTON) == LOW && buttonPressed == false) {
-        if(menuItemNum < optionsMenu.menuItemNum) {
+        if(menuItemNum < optionsMenu.menuItemNum-1) {
           menuItemNum++;
           menuItemVal=optionsMenu.menuItems[menuItemNum].setVarDef; 
           buttonPressed = true;
         } else {
           finished = true;
         }
+        displayChanged = true;
       }
     } else {
       buttonPressed = false;
+    }
+
+    //Update value if changed
+    if(menuItemValPrev != menuItemVal) {
+      while(menuItemVal > optionsMenu.menuItems[menuItemNum].setVarMax) {
+        menuItemVal = optionsMenu.menuItems[menuItemNum].setVarMin;
+      }
+      
+      while(menuItemVal < optionsMenu.menuItems[menuItemNum].setVarMin) {
+        menuItemVal = optionsMenu.menuItems[menuItemNum].setVarMax;
+      }
+      
+      *optionsMenu.menuItems[menuItemNum].setVarPtr = menuItemVal; 
+      menuItemValPrev = menuItemVal;
+    }
+
+    //draw any updates to display
+    if(displayChanged) {
+      display.setCursor(0,0);
+      display.println("Configuration");
+    
+      for(int i = 0; i < optionsMenu.menuItemNum; i++) {
+        if(i == menuItemNum) {
+          display.print(">");
+        }
+  
+        char valBuffer[10];
+        strcpy(valBuffer, (*optionsMenu.menuItems[i].returnFunc)(*optionsMenu.menuItems[i].setVarPtr));
+  
+        display.print(optionsMenu.menuItems[i].menuItemText);
+        if(optionsMenu.menuItems[i].setVarMax != optionsMenu.menuItems[i].setVarMin) {
+          display.clearToEOL();
+          alignCursorRight(strlen(valBuffer));
+          display.print(valBuffer);
+        }
+        display.println();
+      }
+      displayChanged = false;
     }
   }
 }
 
 char * menuItemValToChar(int val) {
-  char valBuffer[8];
-  itoa(val,valBuffer,8);
-  return valBuffer;
+  char charBuffer[10];
+  itoa(val,charBuffer,10);
+  return charBuffer;
 }
