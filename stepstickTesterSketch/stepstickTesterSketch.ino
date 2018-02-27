@@ -214,7 +214,7 @@ bool runTest() {
 
         if(HAVE_ROTATIONAL_ENCODER) {
           int forwardPosition = readEncoderAngle();
-          angularDiff = angularDifference(startPosition, forwardPosition);
+          angularDiff = abs(angularDifference(startPosition, forwardPosition));
 
           Serial.print(F("Start angle: "));
           Serial.print(startPosition);
@@ -247,7 +247,7 @@ bool runTest() {
 
         if(HAVE_ROTATIONAL_ENCODER) {
           int returnedPosition = readEncoderAngle();
-          angularDiff = angularDifference(startPosition, returnedPosition);
+          angularDiff = abs(angularDifference(startPosition, returnedPosition));
 
           Serial.print(F("Start angle: "));
           Serial.print(startPosition);
@@ -281,7 +281,7 @@ bool runTest() {
 
         if(HAVE_ROTATIONAL_ENCODER) {
           int disabledPosition = readEncoderAngle();
-          angularDiff = angularDifference(startPosition, disabledPosition);
+          angularDiff = abs(angularDifference(startPosition, disabledPosition));
 
           Serial.print(F("Start angle: "));
           Serial.print(startPosition);
@@ -343,14 +343,19 @@ float dividerVoltage(int analogReading, int R1, int R2) {
 }
 
 int angularDifference(int angleA, int angleB) {
-  int difference = angleA - angleB;
+  int difference = angleB - angleA;
   while (difference < -180) difference += 360;
   while (difference > 180) difference -= 360;
   return difference;
 }
 
 int readEncoderAngle() {
-  return (int)round(convertRawAngleToDegrees(ams5600.getRawAngle()));
+  int angle = (int)round(convertRawAngleToDegrees(ams5600.getRawAngle()));
+  #ifdef ENCODER_INVERT
+    return 360-angle;
+  #else
+    return angle;
+  #endif
 }
 
 float convertRawAngleToDegrees(word newAngle) {

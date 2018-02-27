@@ -5,6 +5,7 @@
 // GENERAL CONFIG
 /////////////////////////////////////////////////////////////////////
 #define HAVE_ROTATIONAL_ENCODER true    //if we don't have an encoder, the user must watch the motor and verify it behaves correctly
+#define ENCODER_INVERT
 
 #define BOARD_V01_METROMINI
 
