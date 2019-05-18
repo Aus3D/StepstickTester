@@ -6,21 +6,22 @@ testProcedure drv8825_test = {
     testFunction_testInputVoltage,
     testFunction_test5V,
     testFunction_test12V,
-    testFunction_testStepperMotion
+    testFunction_testStepperMotion,
+    testFunction_powerDown
   },
-  .functionCount = 4
+  .functionCount = 5
 };
 
 const driverType drv8825 = {
 	.microsteps = {
-	{0b000, 1},
-	{0b001, 2},
-	{0b010, 4},
-	{0b011, 8},
-	{0b100, 16},
-	{0b101, 32},
-	{0b110, 32},
-	{0b111, 32}},
+	{{0,0,0}, 1},
+	{{0,0,1}, 2},
+	{{0,1,0}, 4},
+	{{0,1,1}, 8},
+	{{1,0,0}, 16},
+	{{1,0,1}, 32},
+	{{1,1,0}, 32},
+	{{1,1,1}, 32}},
 	.microsteppingModes = 6,
 	.enable_inverted = true,
 	.dir_inverted = false,
@@ -30,11 +31,11 @@ const driverType drv8825 = {
 
 const driverType a4988 = {
 	.microsteps = {
-	{0b000, 1},
-	{0b001, 2},
-	{0b010, 4},
-	{0b011, 8},
-	{0b111, 16}},
+	{{0,0,0}, 1},
+	{{0,0,1}, 2},
+	{{0,1,0}, 4},
+	{{0,1,1}, 8},
+	{{1,1,1}, 16}},
 	.microsteppingModes = 5,
 	.enable_inverted = true,
 	.dir_inverted = false,
@@ -42,16 +43,45 @@ const driverType a4988 = {
   "A4988"
 };
 
-const driverList drivers = {{a4988, drv8825}, DRIVER_TYPE_COUNT};
+const driverType tmc2100 = {
+  .microsteps = {
+  {{0,0,0}, 16}},   //spreadCycle
+  .microsteppingModes = 1,
+  .enable_inverted = true,
+  .dir_inverted = true,
+  drv8825_test,
+  "TMC2100"
+};
+
+
+const driverType tmc2130 = {
+	.microsteps = {
+	{{0,0,0}, 1},		//spreadCycle
+	{{0,0,1}, 2},		//spreadCycle
+	{{0,0,2}, 2},		//spreadCycle (256)
+	{{0,1,0}, 4},		//spreadCycle
+	{{0,1,1}, 16},		//spreadCycle
+	{{0,1,2}, 4},		//spreadCycle (256)
+	{{0,2,0}, 16},		//spreadCycle (256)
+	{{0,2,1}, 4},		//stealthChop (256)
+	{{0,2,2}, 16}},		//stealthChop (256)
+	.microsteppingModes = 9,
+	.enable_inverted = true,
+	.dir_inverted = false,
+  drv8825_test,
+  "TMC2130"
+};
+
+const driverList drivers = {{a4988, drv8825, tmc2100, tmc2130}, DRIVER_TYPE_COUNT};
 
 Stepper::Stepper(int STEP_PIN, int DIR_PIN, int EN_PIN, int MS1_PIN, int MS2_PIN, int MS3_PIN, int type)
 {
 	_step_pin = STEP_PIN;
 	_dir_pin = DIR_PIN;
 	_en_pin = EN_PIN;
-	_ms1_pin = MS1_PIN;
-	_ms2_pin = MS2_PIN;
-	_ms3_pin = MS3_PIN;
+	_ms_pin[2] = MS1_PIN;
+	_ms_pin[1] = MS2_PIN;
+	_ms_pin[0] = MS3_PIN;
 	_microsteppingMode = 0;
   setDriverType(type);
 }
@@ -76,9 +106,14 @@ void Stepper::setMicrosteppingMode(int mode) {
 	if(mode >= 0 && mode < getMicrosteppingModes()) {
 		_microsteppingMode = mode;
 
-		digitalWrite(_ms1_pin, bitRead(_driver.microsteps[mode].pin_states,0));
-		digitalWrite(_ms2_pin, bitRead(_driver.microsteps[mode].pin_states,1));
-		digitalWrite(_ms3_pin, bitRead(_driver.microsteps[mode].pin_states,2));
+		for(int i = 0; i < 3; i++) {
+			if(_driver.microsteps[mode].pin_state[i] == 2) {
+				pinMode(_ms_pin[i], INPUT);
+			} else {
+				pinMode(_ms_pin[i], OUTPUT);
+				digitalWrite(_ms_pin[i], _driver.microsteps[mode].pin_state[i]);
+			}
+		}
 	}
 }
 
@@ -124,4 +159,3 @@ static char * Stepper::getDriverTypeName(int type) {
   }
   return drivers.drivers[type].driver_name;
 }
-

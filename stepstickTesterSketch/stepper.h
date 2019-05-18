@@ -3,14 +3,16 @@
 #include "Arduino.h"
 #include "tests.h"
 
-#define DRIVER_TYPE_A4988		0
-#define DRIVER_TYPE_DRV8825	1
-#define DRIVER_TYPE_COUNT   2
+#define DRIVER_TYPE_COUNT   4
 
-typedef bool (* GenericFP)(void);
+#define MS_PIN_HIGH	0b11
+#define MS_PIN_LOW	0b00
+#define MS_PIN_OPEN	0b10
+
+typedef int (* GenericFP)(int);
 
 typedef struct {
-	byte pin_states;
+	byte pin_state[3];
 	byte step_multiplier; 
 } microsteppingMode;
 
@@ -20,7 +22,7 @@ typedef struct {
 } testProcedure;
 
 typedef struct {
-	microsteppingMode microsteps[8];
+	microsteppingMode microsteps[10];
 	byte microsteppingModes;
 	bool enable_inverted;
 	bool dir_inverted;
@@ -37,7 +39,7 @@ typedef struct {
 class Stepper
 {
 public:
-	Stepper(int STEP_PIN, int DIR_PIN, int EN_PIN, int MS1_PIN, int MS2_PIN, int MS3_PIN, int type);
+	Stepper(int STEP_PIN, int DIR_PIN, int EN_PIN, int MS1_PIN, int MS2_PIN, int MS3_PIN, int dtype);
 	void moveMotor(float rotations);
 	void setMicrosteppingMode(int mode);
 	int getMicrosteppingMode();
@@ -46,8 +48,8 @@ public:
 	void enableMotor(bool enabled);
 	void setDirectionForward(bool forward);
 	void setMotorSpeed(float speed);
-	void setDriverType(int type);
-	static char * getDriverTypeName(int type);
+	void setDriverType(int dtype);
+	static char * getDriverTypeName(int dtype);
 	int getDriverType();
 	driverType getDriver();
 
@@ -58,9 +60,7 @@ private:
 	byte _step_pin;
 	byte _dir_pin;
 	byte _en_pin;
-	byte _ms1_pin;
-	byte _ms2_pin;
-	byte _ms3_pin;
+	byte _ms_pin[3];
 
 	int _stepsPerRevolution = 200;
 	float _speed = 1;

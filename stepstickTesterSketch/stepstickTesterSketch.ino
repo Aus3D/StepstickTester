@@ -9,7 +9,7 @@
 #include "AMS_5600.h"
 
 SSD1306AsciiWire display;
-Stepper stepper(STEPPER_STEP, STEPPER_DIR, STEPPER_EN, STEPPER_MS1, STEPPER_MS2, STEPPER_MS3, DRIVER_TYPE_DRV8825);
+Stepper stepper(STEPPER_STEP, STEPPER_DIR, STEPPER_EN, STEPPER_MS1, STEPPER_MS2, STEPPER_MS3, 0);
 AMS_5600 ams5600;
 
 typedef struct {
@@ -28,11 +28,9 @@ int driverTypeVar;
 
 char * menuItemValToChar(int val);
 
-
 menuItem testDriver = {"Driver Type:   ",&driverTypeVar,0,0,(DRIVER_TYPE_COUNT-1),&(stepper.getDriverTypeName)};
 menuItem testSpeed  = {"Motor Speed:   ",&testSpeedVar,MOTOR_TEST_SPEED,1,10,&(menuItemValToChar)};
 menuItem testStart  = {"Begin Test",&testStartVar,0,0,0,&(menuItemValToChar)};
-
 
 typedef struct {
   menuItem menuItems[5];
@@ -102,7 +100,7 @@ void loop() {
 }
 
 bool runTest() {
-  bool failed = false;
+  int testStatus = TEST_PASSED;
 
   display.clear();
   display.setCursor(0,0);
@@ -112,21 +110,27 @@ bool runTest() {
   unsigned long testStartTime = millis();
 
   for(int i = 0; i < stepper.getDriver().test.functionCount; i++) {
-    failed = (*stepper.getDriver().test.functions[i])();
+    int newStatus = (*stepper.getDriver().test.functions[i])(testStatus);
 
-    alignCursorRight(4);
-
-    if(failed) {
+    if(newStatus == TEST_FAILED) {
+      testStatus = TEST_FAILED;
+      alignCursorRight(4);
       display.println(F("fail"));
       Serial.println(F("fail"));
-      break;
-    }  else {
+    }
+
+    if(newStatus == TEST_PASSED) {
+      alignCursorRight(4);
       display.println(F("pass"));
       Serial.println(F("pass"));
     }
   }
 
-  if(failed) {
+  digitalWrite(POWER_MOTOR_LOGIC_EN,  HIGH);
+  digitalWrite(POWER_MOTOR_SUPPLY_EN, HIGH);
+  stepper.enableMotor(false);
+
+  if(testStatus == TEST_FAILED) {
     digitalWrite(LED_RED, HIGH);
     tone(BUZZER, BUZZER_FAILED_FREQ, BUZZER_PASSFAIL_DUR);
     display.println(F("Test failed!"));
@@ -142,7 +146,11 @@ bool runTest() {
   Serial.print(testDuration);
   Serial.println(F("ms to complete."));
 
-  return !failed;
+  if(testStatus == TEST_PASSED) {
+    return true;
+  } else {
+    return false;
+  }
 }
 
 void configurationScreen() {
@@ -164,7 +172,7 @@ void configurationScreen() {
     int newAngle = readEncoderAngle();
     int angDiff = angularDifference(oldAngle, newAngle);
 
-    /*
+    
     Serial.print(F("old angle: \t"));
     Serial.print(oldAngle);
     Serial.print(F("\tnew angle: \t"));
@@ -178,7 +186,7 @@ void configurationScreen() {
     Serial.print(F("\titem val: \t"));
     Serial.print(*optionsMenu.menuItems[menuItemNum].setVarPtr);
     Serial.println();
-    */
+    
 
     //Handle input from encoder
     if(optionsMenu.menuItems[menuItemNum].setVarMax != optionsMenu.menuItems[menuItemNum].setVarMin) {
