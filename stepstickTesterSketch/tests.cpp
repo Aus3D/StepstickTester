@@ -79,18 +79,46 @@ int testFunction_powerDown(int prevStatus) {
 
   delay(RAIL_SHORT_WAIT_TIME);   
 
+  return status;
+}
+
+int testFunction_test5V_down(int prevStatus) {
+  int status = TEST_PASSED;
+
+  Serial.print(F("Checking 5V down... "));
+  display.print(F("5V down... "));
+  
   unsigned long startPowerDownTime = millis();
-  float logic_rail, supply_rail;
+  float logic_rail;
 
   do {
     logic_rail  = dividerVoltage(analogRead(POWER_MOTOR_LOGIC_TEST), LOGIC_RAIL_DIV_R1, LOGIC_RAIL_DIV_R2);
-    supply_rail = dividerVoltage(analogRead(POWER_MOTOR_SUPPLY_TEST), SUPPLY_RAIL_DIV_R1, SUPPLY_RAIL_DIV_R2);
 
     if((millis() - startPowerDownTime) > POWER_DOWN_TIMEOUT) {
       status = TEST_FAILED;
       break;
     } 
-  }  while(logic_rail > POWER_DOWN_THRESHOLD/* || supply_rail > POWER_DOWN_THRESHOLD*/);
+  }  while(logic_rail > POWER_DOWN_THRESHOLD);
+  return status;
+}
+
+int testFunction_test12V_down(int prevStatus) {
+  int status = TEST_PASSED;
+
+  Serial.print(F("Checking 12V down... "));
+  display.print(F("12V down... "));
+  
+  unsigned long startPowerDownTime = millis();
+  float supply_rail;
+
+  do {
+    supply_rail  = dividerVoltage(analogRead(POWER_MOTOR_SUPPLY_TEST), SUPPLY_RAIL_DIV_R1, SUPPLY_RAIL_DIV_R2);
+
+    if((millis() - startPowerDownTime) > POWER_DOWN_TIMEOUT) {
+      status = TEST_FAILED;
+      break;
+    } 
+  }  while(supply_rail > POWER_DOWN_THRESHOLD);
   return status;
 }
 

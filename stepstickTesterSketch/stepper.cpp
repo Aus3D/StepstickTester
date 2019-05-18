@@ -7,6 +7,18 @@ testProcedure drv8825_test = {
     testFunction_test5V,
     testFunction_test12V,
     testFunction_testStepperMotion,
+    testFunction_powerDown,
+    testFunction_test5V_down
+  },
+  .functionCount = 6
+};
+
+testProcedure tmc2100_test = {
+  .functions = {
+    testFunction_testInputVoltage,
+    testFunction_test5V,
+    testFunction_test12V,
+    testFunction_testStepperMotion,
     testFunction_powerDown
   },
   .functionCount = 5
@@ -49,7 +61,7 @@ const driverType tmc2100 = {
   .microsteppingModes = 1,
   .enable_inverted = true,
   .dir_inverted = true,
-  drv8825_test,
+  tmc2100_test,
   "TMC2100"
 };
 
@@ -68,7 +80,7 @@ const driverType tmc2130 = {
 	.microsteppingModes = 9,
 	.enable_inverted = true,
 	.dir_inverted = false,
-  drv8825_test,
+  tmc2100_test,
   "TMC2130"
 };
 

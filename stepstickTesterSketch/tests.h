@@ -7,6 +7,8 @@
 
 int testFunction_test5V(int prevStatus);
 int testFunction_test12V(int prevStatus);
+int testFunction_test5V_down(int prevStatus);
+int testFunction_test12V_down(int prevStatus);
 int testFunction_testInputVoltage(int prevStatus);
 int testFunction_testStepperMotion(int prevStatus);
 int testFunction_powerDown(int prevStatus);
